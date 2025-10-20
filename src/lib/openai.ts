@@ -105,7 +105,7 @@ Guidelines:
   });
 
   const completion = await openai.chat.completions.create({
-    model: 'chatgpt-4o-latest-2025-03-27',
+    model: 'gpt-4o-mini',
     messages,
     max_tokens: 100,
     temperature: 0.7,

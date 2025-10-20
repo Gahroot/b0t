@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 
 const robotoHeading = Roboto_Mono({
   weight: "500",
@@ -32,7 +33,7 @@ export default function RootLayout({
       <body
         className={`${robotoHeading.variable} ${robotoBody.variable} antialiased`}
       >
-        {children}
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );

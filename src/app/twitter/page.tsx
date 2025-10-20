@@ -22,7 +22,7 @@ export default function TwitterPage() {
 
           <CompactAutomationRow
             title="Reply to Tweets"
-            jobName="twitter-reply-tweets"
+            jobName="reply-to-tweets"
             defaultInterval="*/15 * * * *"
             defaultPrompt="You are a helpful and engaging account. Reply to tweets in your feed or specific tweets in a thoughtful, relevant way. Add value to the conversation."
           />

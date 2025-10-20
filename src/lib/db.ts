@@ -11,12 +11,15 @@ const databaseUrl = process.env.DATABASE_URL;
 const useSQLite = !databaseUrl;
 
 let db: ReturnType<typeof drizzleSQLite> | ReturnType<typeof drizzlePostgres>;
+let sqliteDb: ReturnType<typeof drizzleSQLite> | null = null;
+let postgresDb: ReturnType<typeof drizzlePostgres> | null = null;
 
 if (useSQLite) {
   // SQLite configuration for local development
   console.log('🗄️  Using SQLite database for local development');
   const sqlite = new Database('local.db');
-  db = drizzleSQLite(sqlite);
+  sqliteDb = drizzleSQLite(sqlite);
+  db = sqliteDb;
 } else {
   // PostgreSQL configuration for production (Railway)
   console.log('🗄️  Using PostgreSQL database');
@@ -26,7 +29,8 @@ if (useSQLite) {
   const pool = new Pool({
     connectionString: databaseUrl,
   });
-  db = drizzlePostgres(pool);
+  postgresDb = drizzlePostgres(pool);
+  db = postgresDb;
 }
 
-export { db, useSQLite };
+export { db, useSQLite, sqliteDb, postgresDb };

@@ -130,7 +130,7 @@ export function CompactAutomationRow({
         </Dialog>
 
         {/* Filters Button (only for reply-to-tweets) */}
-        {jobName === 'twitter-reply-tweets' && (
+        {jobName === 'reply-to-tweets' && (
           <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">

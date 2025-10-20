@@ -13,12 +13,16 @@ export const env = createEnv({
     // OpenAI
     OPENAI_API_KEY: z.string().optional(),
 
-    // Twitter/X
+    // Twitter/X OAuth 1.0a (for automated posting)
     TWITTER_API_KEY: z.string().optional(),
     TWITTER_API_SECRET: z.string().optional(),
     TWITTER_ACCESS_TOKEN: z.string().optional(),
     TWITTER_ACCESS_SECRET: z.string().optional(),
     TWITTER_BEARER_TOKEN: z.string().optional(),
+
+    // Twitter/X OAuth 2.0 (for user login)
+    TWITTER_CLIENT_ID: z.string().optional(),
+    TWITTER_CLIENT_SECRET: z.string().optional(),
 
     // YouTube
     YOUTUBE_CLIENT_ID: z.string().optional(),
@@ -66,6 +70,8 @@ export const env = createEnv({
     TWITTER_ACCESS_TOKEN: process.env.TWITTER_ACCESS_TOKEN,
     TWITTER_ACCESS_SECRET: process.env.TWITTER_ACCESS_SECRET,
     TWITTER_BEARER_TOKEN: process.env.TWITTER_BEARER_TOKEN,
+    TWITTER_CLIENT_ID: process.env.TWITTER_CLIENT_ID,
+    TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET,
     YOUTUBE_CLIENT_ID: process.env.YOUTUBE_CLIENT_ID,
     YOUTUBE_CLIENT_SECRET: process.env.YOUTUBE_CLIENT_SECRET,
     YOUTUBE_REFRESH_TOKEN: process.env.YOUTUBE_REFRESH_TOKEN,

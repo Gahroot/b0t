@@ -97,6 +97,18 @@ export const youtubeCommentsTableSQLite = sqliteTable('youtube_comments', {
     .default(sql`(unixepoch())`),
 });
 
+// OAuth state table for SQLite (temporary storage during OAuth flow)
+export const oauthStateTableSQLite = sqliteTable('oauth_state', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  state: text('state').notNull().unique(),
+  codeVerifier: text('code_verifier').notNull(),
+  userId: text('user_id').notNull(),
+  provider: text('provider').notNull(), // twitter, youtube, instagram
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 // For PostgreSQL (production)
 export const tweetsTablePostgres = pgTable('tweets', {
   id: serial('id').primaryKey(),
@@ -180,6 +192,16 @@ export const youtubeCommentsTablePostgres = pgTable('youtube_comments', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+// OAuth state table for PostgreSQL (temporary storage during OAuth flow)
+export const oauthStateTablePostgres = pgTable('oauth_state', {
+  id: serial('id').primaryKey(),
+  state: varchar('state', { length: 255 }).notNull().unique(),
+  codeVerifier: pgText('code_verifier').notNull(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  provider: varchar('provider', { length: 50 }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 // Export the appropriate tables based on environment
 // This will be imported and used throughout the app
 export type Tweet = typeof tweetsTableSQLite.$inferSelect;
@@ -196,3 +218,5 @@ export type YouTubeVideo = typeof youtubeVideosTableSQLite.$inferSelect;
 export type NewYouTubeVideo = typeof youtubeVideosTableSQLite.$inferInsert;
 export type YouTubeComment = typeof youtubeCommentsTableSQLite.$inferSelect;
 export type NewYouTubeComment = typeof youtubeCommentsTableSQLite.$inferInsert;
+export type OAuthState = typeof oauthStateTableSQLite.$inferSelect;
+export type NewOAuthState = typeof oauthStateTableSQLite.$inferInsert;

@@ -196,5 +196,11 @@ export async function replyToTweetsWorkflow(config: WorkflowConfig) {
     })
     .execute(initialContext);
 
+  if (!result.success || !result.finalData) {
+    const failedStep = result.results.find(r => !r.success);
+    const errorMessage = failedStep?.error || 'Unknown pipeline error';
+    throw new Error(`Workflow failed at step "${failedStep?.name}": ${errorMessage}`);
+  }
+
   return result.finalData as WorkflowContext;
 }
