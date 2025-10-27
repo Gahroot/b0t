@@ -18,7 +18,7 @@ export default function YouTubePage() {
         {/* Compact Automations List */}
         <div className="space-y-2 animate-slide-up">
           <CompactAutomationRow
-            title="Check & Reply to Comments"
+            title="Reply to Comments"
             jobName="check-youtube-comments"
             defaultInterval="*/30 * * * *"
             defaultPrompt="You are a friendly YouTube creator. Reply to comments on your videos in a helpful, engaging way. Keep responses concise and positive."

@@ -3,6 +3,7 @@ import { logger } from '../logger';
 import { generateAndPostTweet, analyzeTrends, generateScheduledContent } from './twitter-ai';
 import { replyToTweetsJob } from './twitter-reply';
 import { checkAndReplyToYouTubeComments, fetchYouTubeCommentsForAnalysis } from './youtube';
+import { replyToYouTubeCommentsJob } from './youtube-reply';
 import { db } from '../db';
 import { appSettingsTable } from '../schema';
 
@@ -98,6 +99,9 @@ export async function initializeBullMQJobs() {
         case 'check-youtube-comments':
           await checkAndReplyToYouTubeComments();
           break;
+        case 'reply-to-youtube-comments':
+          await replyToYouTubeCommentsJob();
+          break;
         case 'fetch-youtube-comments-analysis':
           await fetchYouTubeCommentsForAnalysis();
           break;
@@ -111,6 +115,7 @@ export async function initializeBullMQJobs() {
       { name: 'generate-scheduled-content', defaultSchedule: '0 */4 * * *', priority: 2 },
       { name: 'ai-tweet-generation', defaultSchedule: '0 10 * * *', priority: 1 },
       { name: 'reply-to-tweets', defaultSchedule: '0 */2 * * *', priority: 1 },
+      { name: 'reply-to-youtube-comments', defaultSchedule: '0 */30 * * *', priority: 1 },
       { name: 'analyze-trends', defaultSchedule: '0 8 * * *', priority: 3 },
       { name: 'check-youtube-comments', defaultSchedule: '*/30 * * * *', priority: 3 },
       { name: 'fetch-youtube-comments-analysis', defaultSchedule: '0 */6 * * *', priority: 4 },

@@ -2,19 +2,20 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { useSQLite, sqliteDb, postgresDb } from '@/lib/db';
 import { accountsTableSQLite, accountsTablePostgres } from '@/lib/schema';
-import { eq, and } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
+import { eq, and } from 'drizzle-orm';
 
 /**
- * Twitter Connection Status Endpoint
+ * YouTube Connection Status Endpoint
  *
- * Returns whether the current user has connected their Twitter account
- * and provides basic account information.
+ * GET: Check if YouTube is connected
+ * DELETE: Disconnect YouTube account
  */
+
 export async function GET() {
   try {
-    // Check if user is authenticated
     const session = await auth();
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -22,79 +23,67 @@ export async function GET() {
       );
     }
 
-    // Look up Twitter account in database
-    let twitterAccount;
+    // Look up YouTube account in accounts table
+    let youtubeAccount;
     if (useSQLite) {
       if (!sqliteDb) throw new Error('SQLite database not initialized');
-      [twitterAccount] = await sqliteDb
+      [youtubeAccount] = await sqliteDb
         .select()
         .from(accountsTableSQLite)
         .where(
           and(
             eq(accountsTableSQLite.userId, session.user.id),
-            eq(accountsTableSQLite.provider, 'twitter')
+            eq(accountsTableSQLite.provider, 'youtube')
           )
         )
         .limit(1);
     } else {
       if (!postgresDb) throw new Error('PostgreSQL database not initialized');
-      [twitterAccount] = await postgresDb
+      [youtubeAccount] = await postgresDb
         .select()
         .from(accountsTablePostgres)
         .where(
           and(
             eq(accountsTablePostgres.userId, session.user.id),
-            eq(accountsTablePostgres.provider, 'twitter')
+            eq(accountsTablePostgres.provider, 'youtube')
           )
         )
         .limit(1);
     }
 
-    if (!twitterAccount) {
+    if (!youtubeAccount) {
       return NextResponse.json({
         connected: false,
-        account: null,
       });
     }
 
-    // Check if token is expired (tokens expire in 2 hours by default)
-    const isExpired = twitterAccount.expires_at
-      ? twitterAccount.expires_at < Math.floor(Date.now() / 1000)
-      : false;
-
-    logger.info(
-      { userId: session.user.id, isExpired },
-      'Checked Twitter connection status'
-    );
+    // Check if token is expired
+    const now = Math.floor(Date.now() / 1000);
+    const isExpired = youtubeAccount.expires_at ? youtubeAccount.expires_at < now : false;
 
     return NextResponse.json({
       connected: true,
       account: {
-        providerAccountId: twitterAccount.providerAccountId,
-        accountName: twitterAccount.account_name,
-        hasRefreshToken: !!twitterAccount.refresh_token,
+        providerAccountId: youtubeAccount.providerAccountId,
+        accountName: youtubeAccount.account_name,
+        hasRefreshToken: !!youtubeAccount.refresh_token,
         isExpired,
-        expiresAt: twitterAccount.expires_at,
+        expiresAt: youtubeAccount.expires_at,
       },
     });
   } catch (error) {
-    logger.error({ error }, 'Failed to check Twitter connection status');
+    logger.error({ error }, 'Error checking YouTube connection status');
     return NextResponse.json(
-      { error: 'Failed to check connection status' },
+      { error: 'Failed to check YouTube connection status' },
       { status: 500 }
     );
   }
 }
 
-/**
- * Disconnect Twitter Account
- *
- * Removes the Twitter account connection for the current user.
- */
 export async function DELETE() {
   try {
-    // Check if user is authenticated
     const session = await auth();
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -102,7 +91,7 @@ export async function DELETE() {
       );
     }
 
-    // Delete Twitter account from database
+    // Delete YouTube account from database
     if (useSQLite) {
       if (!sqliteDb) throw new Error('SQLite database not initialized');
       await sqliteDb
@@ -110,7 +99,7 @@ export async function DELETE() {
         .where(
           and(
             eq(accountsTableSQLite.userId, session.user.id),
-            eq(accountsTableSQLite.provider, 'twitter')
+            eq(accountsTableSQLite.provider, 'youtube')
           )
         );
     } else {
@@ -120,21 +109,21 @@ export async function DELETE() {
         .where(
           and(
             eq(accountsTablePostgres.userId, session.user.id),
-            eq(accountsTablePostgres.provider, 'twitter')
+            eq(accountsTablePostgres.provider, 'youtube')
           )
         );
     }
 
-    logger.info({ userId: session.user.id }, 'Disconnected Twitter account');
+    logger.info({ userId: session.user.id }, 'YouTube account disconnected');
 
     return NextResponse.json({
       success: true,
-      message: 'Twitter account disconnected',
+      message: 'YouTube account disconnected successfully',
     });
   } catch (error) {
-    logger.error({ error }, 'Failed to disconnect Twitter account');
+    logger.error({ error }, 'Error disconnecting YouTube account');
     return NextResponse.json(
-      { error: 'Failed to disconnect account' },
+      { error: 'Failed to disconnect YouTube account' },
       { status: 500 }
     );
   }

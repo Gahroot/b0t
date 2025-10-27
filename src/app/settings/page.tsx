@@ -12,6 +12,17 @@ interface TwitterStatus {
   connected: boolean;
   account: {
     providerAccountId: string;
+    accountName?: string;
+    hasRefreshToken: boolean;
+    isExpired: boolean;
+  } | null;
+}
+
+interface YouTubeStatus {
+  connected: boolean;
+  account: {
+    providerAccountId: string;
+    accountName?: string;
     hasRefreshToken: boolean;
     isExpired: boolean;
   } | null;
@@ -19,13 +30,16 @@ interface TwitterStatus {
 
 export default function SettingsPage() {
   const { status } = useSession();
+  const [twitterAccount, setTwitterAccount] = useState<TwitterStatus['account']>(null);
   const [twitterConnected, setTwitterConnected] = useState(false);
   const [twitterLoading, setTwitterLoading] = useState(true);
+  const [youtubeAccount, setYoutubeAccount] = useState<YouTubeStatus['account']>(null);
   const [youtubeConnected, setYoutubeConnected] = useState(false);
+  const [youtubeLoading, setYoutubeLoading] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [instagramConnected, setInstagramConnected] = useState(false);
 
-  // Fetch Twitter connection status on mount (only if authenticated)
+  // Fetch Twitter and YouTube connection status on mount (only if authenticated)
   useEffect(() => {
     // Wait for session to load before making API calls
     if (status === 'loading') {
@@ -34,10 +48,13 @@ export default function SettingsPage() {
 
     if (status === 'authenticated') {
       fetchTwitterStatus();
+      fetchYoutubeStatus();
     } else {
       // Not logged in, skip API call to avoid 401 error
       setTwitterConnected(false);
       setTwitterLoading(false);
+      setYoutubeConnected(false);
+      setYoutubeLoading(false);
     }
   }, [status]);
 
@@ -46,6 +63,9 @@ export default function SettingsPage() {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'twitter-auth-success') {
         fetchTwitterStatus();
+      }
+      if (event.data?.type === 'youtube-auth-success') {
+        fetchYoutubeStatus();
       }
     };
 
@@ -63,14 +83,41 @@ export default function SettingsPage() {
       if (response.ok) {
         const data: TwitterStatus = await response.json();
         setTwitterConnected(data.connected);
+        setTwitterAccount(data.account);
       } else {
         setTwitterConnected(false);
+        setTwitterAccount(null);
       }
     } catch (error) {
       console.error('Error fetching Twitter status:', error);
       setTwitterConnected(false);
+      setTwitterAccount(null);
     } finally {
       setTwitterLoading(false);
+    }
+  };
+
+  const fetchYoutubeStatus = async () => {
+    try {
+      setYoutubeLoading(true);
+      const response = await fetch('/api/auth/youtube/status', {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data: YouTubeStatus = await response.json();
+        setYoutubeConnected(data.connected);
+        setYoutubeAccount(data.account);
+      } else {
+        setYoutubeConnected(false);
+        setYoutubeAccount(null);
+      }
+    } catch (error) {
+      console.error('Error fetching YouTube status:', error);
+      setYoutubeConnected(false);
+      setYoutubeAccount(null);
+    } finally {
+      setYoutubeLoading(false);
     }
   };
 
@@ -115,6 +162,7 @@ export default function SettingsPage() {
           });
           if (response.ok) {
             setTwitterConnected(false);
+            setTwitterAccount(null);
           }
         } catch (error) {
           console.error('Failed to disconnect Twitter:', error);
@@ -136,8 +184,17 @@ export default function SettingsPage() {
 
     if (platform === 'youtube') {
       if (youtubeConnected) {
-        setYoutubeConnected(false);
-        // TODO: Clear YouTube credentials
+        // Disconnect YouTube
+        setYoutubeLoading(true);
+        try {
+          await fetch('/api/auth/youtube/status', { method: 'DELETE' });
+          setYoutubeConnected(false);
+          setYoutubeAccount(null);
+        } catch (error) {
+          console.error('Error disconnecting YouTube:', error);
+        } finally {
+          setYoutubeLoading(false);
+        }
       } else {
         // Open YouTube/Google OAuth in popup
         const width = 600;
@@ -201,6 +258,8 @@ export default function SettingsPage() {
               <div className="text-[10px] text-secondary">
                 {twitterLoading
                   ? 'Checking...'
+                  : twitterConnected && twitterAccount?.accountName
+                  ? `@${twitterAccount.accountName}`
                   : twitterConnected
                   ? 'Connected'
                   : status !== 'authenticated'
@@ -246,14 +305,30 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="text-[10px] text-secondary">
-                {youtubeConnected ? 'Connected' : 'Not connected'}
+                {youtubeLoading
+                  ? 'Checking...'
+                  : youtubeConnected && youtubeAccount?.accountName
+                  ? youtubeAccount.accountName
+                  : youtubeConnected
+                  ? 'Connected'
+                  : 'Not connected'}
               </div>
               <Button
                 onClick={() => handleConnect('youtube')}
                 variant={youtubeConnected ? 'outline' : 'default'}
                 className="w-full h-7 text-xs"
+                disabled={youtubeLoading}
               >
-                {youtubeConnected ? 'Disconnect' : 'Connect'}
+                {youtubeLoading ? (
+                  <>
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Loading
+                  </>
+                ) : youtubeConnected ? (
+                  'Disconnect'
+                ) : (
+                  'Connect'
+                )}
               </Button>
             </CardContent>
           </Card>

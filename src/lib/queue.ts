@@ -243,6 +243,7 @@ export const QUEUE_NAMES = {
   TWITTER_POST: 'twitter:post',
   TWITTER_REPLY: 'twitter:reply',
   YOUTUBE_COMMENT: 'youtube:comment',
+  YOUTUBE_REPLY: 'youtube:reply',
   INSTAGRAM_POST: 'instagram:post',
   AI_GENERATION: 'ai:generation',
   ANALYTICS: 'analytics',

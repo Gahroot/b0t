@@ -163,6 +163,7 @@ export async function GET(request: NextRequest) {
             refresh_token: encryptedRefreshToken || existingAccount.refresh_token,
             expires_at: expiresAt,
             providerAccountId: twitterUser.id,
+            account_name: twitterUser.username || null,
           })
           .where(eq(accountsTableSQLite.id, existingAccount.id));
       } else {
@@ -173,6 +174,7 @@ export async function GET(request: NextRequest) {
           type: 'oauth',
           provider: 'twitter',
           providerAccountId: twitterUser.id,
+          account_name: twitterUser.username || null,
           access_token: encryptedAccessToken,
           refresh_token: encryptedRefreshToken,
           expires_at: expiresAt,
@@ -207,6 +209,7 @@ export async function GET(request: NextRequest) {
             refresh_token: encryptedRefreshToken || existingAccount.refresh_token,
             expires_at: expiresAt,
             providerAccountId: twitterUser.id,
+            account_name: twitterUser.username || null,
           })
           .where(eq(accountsTablePostgres.id, existingAccount.id));
       } else {
@@ -217,6 +220,7 @@ export async function GET(request: NextRequest) {
           type: 'oauth',
           provider: 'twitter',
           providerAccountId: twitterUser.id,
+          account_name: twitterUser.username || null,
           access_token: encryptedAccessToken,
           refresh_token: encryptedRefreshToken,
           expires_at: expiresAt,

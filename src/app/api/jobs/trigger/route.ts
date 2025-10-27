@@ -11,6 +11,7 @@ import {
   checkAndReplyToYouTubeComments,
   fetchYouTubeCommentsForAnalysis,
 } from '@/lib/jobs';
+import { replyToYouTubeCommentsJob } from '@/lib/jobs/youtube-reply';
 import { checkStrictRateLimit } from '@/lib/ratelimit';
 import { logger, logApiRequest, logApiError } from '@/lib/logger';
 import { triggerJobSchema } from '@/lib/validations';
@@ -33,6 +34,7 @@ import { jobLogsTable } from '@/lib/schema';
  * - reply-to-tweets
  * - post-tweets
  * - check-youtube-comments
+ * - reply-to-youtube-comments
  * - fetch-youtube-comments-analysis
  */
 
@@ -46,6 +48,7 @@ const availableJobs: Record<string, (params?: unknown) => Promise<void>> = {
   'reply-to-tweets': replyToTweetsJob as (params?: unknown) => Promise<void>,
   'post-tweets': postTweetsJob as (params?: unknown) => Promise<void>,
   'check-youtube-comments': checkAndReplyToYouTubeComments as (params?: unknown) => Promise<void>,
+  'reply-to-youtube-comments': replyToYouTubeCommentsJob as (params?: unknown) => Promise<void>,
   'fetch-youtube-comments-analysis': fetchYouTubeCommentsForAnalysis as (params?: unknown) => Promise<void>,
 };
 

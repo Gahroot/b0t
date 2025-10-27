@@ -108,30 +108,31 @@ async function _getVideoComments(videoId: string, maxResults = 100) {
 export const getVideoComments = withYouTubeProtection(_getVideoComments, 'get-comments');
 
 /**
- * Reply to a comment
+ * Reply to a comment (Internal)
  */
-export async function replyToComment(commentId: string, text: string) {
+async function _replyToComment(commentId: string, text: string) {
   if (!youtubeClient) {
     throw new Error('YouTube client is not initialized. Please set YouTube API credentials.');
   }
 
-  try {
-    const response = await youtubeClient.comments.insert({
-      part: ['snippet'],
-      requestBody: {
-        snippet: {
-          parentId: commentId,
-          textOriginal: text,
-        },
+  const response = await youtubeClient.comments.insert({
+    part: ['snippet'],
+    requestBody: {
+      snippet: {
+        parentId: commentId,
+        textOriginal: text,
       },
-    });
+    },
+  });
 
-    return response.data;
-  } catch (error) {
-    logger.error({ error, commentId, textLength: text.length }, 'Error replying to comment');
-    throw error;
-  }
+  logger.info({ commentId, textLength: text.length }, 'Successfully replied to comment');
+  return response.data;
 }
+
+/**
+ * Reply to a comment (Protected)
+ */
+export const replyToComment = withYouTubeProtection(_replyToComment, 'reply-to-comment');
 
 /**
  * Post a top-level comment on a video
@@ -182,6 +183,39 @@ export async function deleteComment(commentId: string) {
     logger.error({ error, commentId }, 'Error deleting comment');
     throw error;
   }
+}
+
+/**
+ * Get recent videos from a channel (Internal)
+ */
+async function _getRecentVideos(channelId: string, maxResults = 5, publishedAfter?: Date) {
+  if (!youtubeClient) {
+    throw new Error('YouTube client is not initialized. Please set YouTube API credentials.');
+  }
+
+  const response = await youtubeClient.search.list({
+    part: ['snippet'],
+    channelId,
+    type: ['video'],
+    maxResults,
+    order: 'date', // Most recent first
+    publishedAfter: publishedAfter?.toISOString(),
+  });
+
+  return response.data.items || [];
+}
+
+/**
+ * Get recent videos from a channel (Protected)
+ */
+export const getRecentVideos = withYouTubeProtection(_getRecentVideos, 'get-recent-videos');
+
+/**
+ * Get our own channel ID
+ */
+export async function getOurChannelId(): Promise<string | null> {
+  const channel = await getChannelDetails();
+  return channel?.id || null;
 }
 
 /**

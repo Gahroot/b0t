@@ -46,6 +46,7 @@ export const accountsTableSQLite = sqliteTable('accounts', {
   type: text('type').notNull(),
   provider: text('provider').notNull(),
   providerAccountId: text('provider_account_id').notNull(),
+  account_name: text('account_name'), // Display name (e.g., Twitter username, YouTube channel name)
   refresh_token: text('refresh_token'),
   access_token: text('access_token'),
   expires_at: integer('expires_at'),
@@ -226,6 +227,7 @@ export const accountsTablePostgres = pgTable('accounts', {
   type: varchar('type', { length: 255 }).notNull(),
   provider: varchar('provider', { length: 255 }).notNull(),
   providerAccountId: varchar('provider_account_id', { length: 255 }).notNull(),
+  account_name: varchar('account_name', { length: 255 }), // Display name (e.g., Twitter username, YouTube channel name)
   refresh_token: pgText('refresh_token'),
   access_token: pgText('access_token'),
   expires_at: pgInteger('expires_at'),
@@ -417,6 +419,46 @@ export const twitterUsageTablePostgres = pgTable('twitter_usage', {
   windowStartIdx: pgIndex('twitter_usage_window_start_idx').on(table.windowStart),
 }));
 
+// YouTube comment replies table for SQLite (tracks our replies to YouTube comments)
+export const youtubeCommentRepliesTableSQLite = sqliteTable('youtube_comment_replies', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  originalCommentId: text('original_comment_id').notNull().unique(), // Prevents duplicate replies
+  originalCommentText: text('original_comment_text').notNull(),
+  originalCommentAuthor: text('original_comment_author').notNull(), // Display name
+  originalCommentLikes: integer('original_comment_likes').default(0),
+  videoId: text('video_id').notNull(),
+  videoTitle: text('video_title'),
+  ourReplyText: text('our_reply_text').notNull(),
+  ourReplyCommentId: text('our_reply_comment_id'), // null if dry-run or failed
+  status: text('status').notNull().default('pending'), // pending, posted, failed
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  repliedAt: integer('replied_at', { mode: 'timestamp' }),
+}, (table) => ({
+  originalCommentIdIdx: sqliteUniqueIndex('youtube_comment_replies_original_comment_id_idx').on(table.originalCommentId),
+  statusIdx: sqliteIndex('youtube_comment_replies_status_idx').on(table.status),
+  createdAtIdx: sqliteIndex('youtube_comment_replies_created_at_idx').on(table.createdAt),
+  videoIdIdx: sqliteIndex('youtube_comment_replies_video_id_idx').on(table.videoId),
+  videoStatusIdx: sqliteIndex('youtube_comment_replies_video_status_idx').on(table.videoId, table.status),
+}));
+
+// YouTube usage tracking table for SQLite (atomic operations for rate limiting)
+export const youtubeUsageTableSQLite = sqliteTable('youtube_usage', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  windowType: text('window_type').notNull().unique(), // '15min', '1hour', '24hour', 'daily', 'monthly'
+  commentsCount: integer('comments_count').notNull().default(0),
+  videosCount: integer('videos_count').notNull().default(0),
+  quotaUnits: integer('quota_units').notNull().default(0), // YouTube API quota units
+  windowStart: integer('window_start', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+}, (table) => ({
+  windowTypeIdx: sqliteIndex('youtube_usage_window_type_idx').on(table.windowType),
+  windowStartIdx: sqliteIndex('youtube_usage_window_start_idx').on(table.windowStart),
+}));
+
 // API Credentials table for SQLite (encrypted storage)
 export const apiCredentialsTableSQLite = sqliteTable('api_credentials', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -431,6 +473,42 @@ export const apiCredentialsTableSQLite = sqliteTable('api_credentials', {
     .default(sql`(unixepoch())`),
 }, (table) => ({
   platformIdx: sqliteIndex('api_credentials_platform_idx').on(table.platform),
+}));
+
+// YouTube comment replies table for PostgreSQL (tracks our replies to YouTube comments)
+export const youtubeCommentRepliesTablePostgres = pgTable('youtube_comment_replies', {
+  id: serial('id').primaryKey(),
+  originalCommentId: varchar('original_comment_id', { length: 255 }).notNull().unique(), // Prevents duplicate replies
+  originalCommentText: pgText('original_comment_text').notNull(),
+  originalCommentAuthor: varchar('original_comment_author', { length: 255 }).notNull(), // Display name
+  originalCommentLikes: pgInteger('original_comment_likes').default(0),
+  videoId: varchar('video_id', { length: 255 }).notNull(),
+  videoTitle: pgText('video_title'),
+  ourReplyText: pgText('our_reply_text').notNull(),
+  ourReplyCommentId: varchar('our_reply_comment_id', { length: 255 }), // null if dry-run or failed
+  status: varchar('status', { length: 50 }).notNull().default('pending'), // pending, posted, failed
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  repliedAt: timestamp('replied_at'),
+}, (table) => ({
+  originalCommentIdIdx: pgUniqueIndex('youtube_comment_replies_original_comment_id_idx').on(table.originalCommentId),
+  statusIdx: pgIndex('youtube_comment_replies_status_idx').on(table.status),
+  createdAtIdx: pgIndex('youtube_comment_replies_created_at_idx').on(table.createdAt),
+  videoIdIdx: pgIndex('youtube_comment_replies_video_id_idx').on(table.videoId),
+  videoStatusIdx: pgIndex('youtube_comment_replies_video_status_idx').on(table.videoId, table.status),
+}));
+
+// YouTube usage tracking table for PostgreSQL (atomic operations for rate limiting)
+export const youtubeUsageTablePostgres = pgTable('youtube_usage', {
+  id: serial('id').primaryKey(),
+  windowType: varchar('window_type', { length: 50 }).notNull().unique(), // '15min', '1hour', '24hour', 'daily', 'monthly'
+  commentsCount: pgInteger('comments_count').notNull().default(0),
+  videosCount: pgInteger('videos_count').notNull().default(0),
+  quotaUnits: pgInteger('quota_units').notNull().default(0), // YouTube API quota units
+  windowStart: timestamp('window_start').notNull(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  windowTypeIdx: pgIndex('youtube_usage_window_type_idx').on(table.windowType),
+  windowStartIdx: pgIndex('youtube_usage_window_start_idx').on(table.windowStart),
 }));
 
 // API Credentials table for PostgreSQL
@@ -461,6 +539,8 @@ export const appSettingsTable = useSQLite ? appSettingsTableSQLite : appSettings
 export const postedNewsArticlesTable = useSQLite ? postedNewsArticlesTableSQLite : postedNewsArticlesTablePostgres;
 export const jobLogsTable = useSQLite ? jobLogsTableSQLite : jobLogsTablePostgres;
 export const twitterUsageTable = useSQLite ? twitterUsageTableSQLite : twitterUsageTablePostgres;
+export const youtubeCommentRepliesTable = useSQLite ? youtubeCommentRepliesTableSQLite : youtubeCommentRepliesTablePostgres;
+export const youtubeUsageTable = useSQLite ? youtubeUsageTableSQLite : youtubeUsageTablePostgres;
 export const apiCredentialsTable = useSQLite ? apiCredentialsTableSQLite : apiCredentialsTablePostgres;
 
 export type Tweet = typeof tweetsTableSQLite.$inferSelect;
@@ -487,5 +567,9 @@ export type JobLog = typeof jobLogsTableSQLite.$inferSelect;
 export type NewJobLog = typeof jobLogsTableSQLite.$inferInsert;
 export type TwitterUsage = typeof twitterUsageTableSQLite.$inferSelect;
 export type NewTwitterUsage = typeof twitterUsageTableSQLite.$inferInsert;
+export type YouTubeCommentReply = typeof youtubeCommentRepliesTableSQLite.$inferSelect;
+export type NewYouTubeCommentReply = typeof youtubeCommentRepliesTableSQLite.$inferInsert;
+export type YouTubeUsage = typeof youtubeUsageTableSQLite.$inferSelect;
+export type NewYouTubeUsage = typeof youtubeUsageTableSQLite.$inferInsert;
 export type APICredential = typeof apiCredentialsTableSQLite.$inferSelect;
 export type NewAPICredential = typeof apiCredentialsTableSQLite.$inferInsert;
