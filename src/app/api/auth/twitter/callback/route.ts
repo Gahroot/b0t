@@ -4,7 +4,7 @@ import { useSQLite, sqliteDb, postgresDb } from '@/lib/db';
 import { oauthStateTableSQLite, oauthStateTablePostgres, accountsTableSQLite, accountsTablePostgres } from '@/lib/schema';
 import { logger } from '@/lib/logger';
 import { eq, and } from 'drizzle-orm';
-import { encrypt } from '@/lib/crypto';
+import { encrypt } from '@/lib/encryption';
 
 /**
  * Twitter OAuth 2.0 Callback Handler

@@ -12,9 +12,15 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}=== Railway Environment Variable Export ===${NC}\n"
 
-# Check if .env file exists
-if [ ! -f .env ]; then
-    echo "Error: .env file not found in current directory"
+# Check for .env.local first, then .env
+if [ -f .env.local ]; then
+    ENV_FILE=.env.local
+    echo "Using .env.local file..."
+elif [ -f .env ]; then
+    ENV_FILE=.env
+    echo "Using .env file..."
+else
+    echo "Error: No .env or .env.local file found in current directory"
     exit 1
 fi
 
@@ -25,7 +31,7 @@ if ! command -v railway &> /dev/null; then
     echo ""
 fi
 
-echo "Reading variables from .env file..."
+echo "Reading variables from $ENV_FILE file..."
 echo ""
 
 # Parse .env file and generate railway commands
@@ -63,7 +69,7 @@ while IFS= read -r line || [ -n "$line" ]; do
         # Update production-specific values
         if [[ "$key" == "AUTH_URL" ]] && [[ "$value" == "http://localhost:3000" ]]; then
             echo -e "${YELLOW}⚠️  AUTH_URL is localhost - update to your Railway URL${NC}"
-            echo -e "${YELLOW}   railway variables set AUTH_URL=\"https://your-app.up.railway.app\"${NC}"
+            echo -e "${YELLOW}   railway variables --set \"AUTH_URL=https://your-app.up.railway.app\"${NC}"
             continue
         fi
 
@@ -73,15 +79,15 @@ while IFS= read -r line || [ -n "$line" ]; do
         fi
 
         # Generate railway command
-        echo "railway variables set $key=\"$value\""
+        echo "railway variables --set \"$key=$value\""
     fi
-done < .env
+done < "$ENV_FILE"
 
 echo ""
 echo -e "${GREEN}=== Instructions ===${NC}"
 echo "1. Review the commands above"
-echo "2. Copy the 'railway variables set' commands you want to use"
+echo "2. Copy the 'railway variables --set' commands you want to use"
 echo "3. Run them in your terminal (make sure you're in the right Railway project)"
 echo ""
 echo "Or run this script with bash and pipe to bash:"
-echo "  bash scripts/export-railway-env.sh | grep 'railway variables set' | bash"
+echo "  bash scripts/export-railway-env.sh | grep 'railway variables --set' | bash"

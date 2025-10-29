@@ -4,31 +4,77 @@ Utility scripts for the Social Cat project.
 
 ## Export Railway Environment Variables
 
-**Script:** `export-railway-env.sh`
-**Command:** `npm run railway:env`
+**Scripts:**
+- `export-railway-env.sh` - Generate Railway variable commands
+- **Commands:**
+  - `npm run railway:env` - Preview commands (recommended first)
+  - `npm run railway:sync` - Automatically sync all variables to Railway
 
-This script reads your local `.env` file and generates `railway variables set` commands to sync your environment variables to Railway.
+This script reads your local `.env.local` (or `.env`) file and syncs environment variables to Railway.
 
-### Usage
+### Quick Start (Recommended)
 
-1. **Make sure you have a `.env` file** with your local environment variables (copy from `.env.example` if needed)
+1. **Make sure you have Railway CLI installed and linked:**
+   ```bash
+   npm install -g @railway/cli
+   railway link  # Link to your Railway service
+   ```
 
-2. **Run the script to preview commands:**
+2. **Ensure you have `.env.local` with your actual credentials**
+
+3. **Preview what will be synced:**
    ```bash
    npm run railway:env
    ```
 
-3. **Review the output** - it will show railway commands like:
+4. **Sync all variables automatically:**
    ```bash
-   railway variables set OPENAI_API_KEY="sk-..."
-   railway variables set TWITTER_API_KEY="..."
-   railway variables set AUTH_SECRET="..."
+   npm run railway:sync
    ```
 
-4. **Copy and paste the commands** you want to set in Railway, or pipe them directly:
+That's it! All your environment variables are now synced to Railway.
+
+### Manual Usage (Alternative)
+
+If you prefer to review each command individually:
+
+1. **Generate commands:**
    ```bash
-   npm run railway:env | grep 'railway variables set' | bash
+   npm run railway:env
    ```
+
+2. **Review the output** - it will show railway commands like:
+   ```bash
+   railway variables --set "OPENAI_API_KEY=sk-..."
+   railway variables --set "TWITTER_API_KEY=..."
+   railway variables --set "AUTH_SECRET=..."
+   ```
+
+3. **Copy and paste individual commands** you want to run
+
+### 🎯 Smart Local-to-Production Conversion
+
+The sync script **automatically converts** local development values to production values:
+
+**Localhost URL Conversion:**
+```bash
+# In .env.local (local development)
+AUTH_URL=http://localhost:3000
+YOUTUBE_REDIRECT_URI=http://localhost:3000/api/youtube/callback
+
+# Automatically becomes in Railway (production)
+AUTH_URL=https://social-cat-production.up.railway.app
+YOUTUBE_REDIRECT_URI=https://social-cat-production.up.railway.app/api/youtube/callback
+```
+
+**Environment Conversion:**
+- `NODE_ENV=development` → `NODE_ENV=production`
+
+**Benefits:**
+- ✅ Keep `localhost:3000` in `.env.local` for local development
+- ✅ Run `npm run railway:sync` to push to production
+- ✅ URLs automatically converted - no manual editing!
+- ✅ Same config file works for both local and production
 
 ### What Gets Skipped
 
@@ -60,20 +106,31 @@ Make sure these are set in Railway for production:
 - `DATABASE_URL` - Added when you create PostgreSQL service
 - `REDIS_URL` - Added when you create Redis service
 
-### Example Workflow
+### Example Workflows
 
+**Full Setup (First Time):**
 ```bash
 # 1. Copy example env file
-cp .env.example .env
+cp .env.example .env.local
 
-# 2. Fill in your actual values in .env
-nano .env
+# 2. Fill in your actual values in .env.local
+nano .env.local
 
-# 3. Generate Railway commands
-npm run railway:env
+# 3. Install and link Railway CLI
+npm install -g @railway/cli
+railway link
 
-# 4. Review and run the commands
-npm run railway:env | grep 'railway variables set' | bash
+# 4. Sync all variables to Railway
+npm run railway:sync
+```
+
+**Update Variables (After Changes):**
+```bash
+# 1. Update your .env.local file
+nano .env.local
+
+# 2. Sync changes to Railway
+npm run railway:sync
 ```
 
 ### Notes

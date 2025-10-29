@@ -389,21 +389,6 @@ export const youtubeUsageTableSQLite = sqliteTable('youtube_usage', {
   windowStartIdx: sqliteIndex('youtube_usage_window_start_idx').on(table.windowStart),
 }));
 
-// API Credentials table for SQLite (encrypted storage)
-export const apiCredentialsTableSQLite = sqliteTable('api_credentials', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  key: text('key').notNull().unique(), // e.g., 'OPENAI_API_KEY', 'TWITTER_API_KEY'
-  value: text('value').notNull(), // Encrypted value
-  platform: text('platform').notNull(), // 'openai', 'twitter', 'youtube', 'instagram'
-  createdAt: integer('created_at', { mode: 'timestamp' })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' })
-    .notNull()
-    .default(sql`(unixepoch())`),
-}, (table) => ({
-  platformIdx: sqliteIndex('api_credentials_platform_idx').on(table.platform),
-}));
 
 // YouTube comment replies table for PostgreSQL (tracks our replies to YouTube comments)
 export const youtubeCommentRepliesTablePostgres = pgTable('youtube_comment_replies', {
@@ -441,17 +426,6 @@ export const youtubeUsageTablePostgres = pgTable('youtube_usage', {
   windowStartIdx: pgIndex('youtube_usage_window_start_idx').on(table.windowStart),
 }));
 
-// API Credentials table for PostgreSQL
-export const apiCredentialsTablePostgres = pgTable('api_credentials', {
-  id: serial('id').primaryKey(),
-  key: varchar('key', { length: 255 }).notNull().unique(),
-  value: pgText('value').notNull(), // Encrypted value
-  platform: varchar('platform', { length: 50 }).notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => ({
-  platformIdx: pgIndex('api_credentials_platform_idx').on(table.platform),
-}));
 
 // Export the appropriate tables based on environment
 // This will be imported and used throughout the app
@@ -467,7 +441,6 @@ export const jobLogsTable = useSQLite ? jobLogsTableSQLite : jobLogsTablePostgre
 export const twitterUsageTable = useSQLite ? twitterUsageTableSQLite : twitterUsageTablePostgres;
 export const youtubeCommentRepliesTable = useSQLite ? youtubeCommentRepliesTableSQLite : youtubeCommentRepliesTablePostgres;
 export const youtubeUsageTable = useSQLite ? youtubeUsageTableSQLite : youtubeUsageTablePostgres;
-export const apiCredentialsTable = useSQLite ? apiCredentialsTableSQLite : apiCredentialsTablePostgres;
 
 export type Tweet = typeof tweetsTableSQLite.$inferSelect;
 export type NewTweet = typeof tweetsTableSQLite.$inferInsert;
@@ -491,5 +464,3 @@ export type YouTubeCommentReply = typeof youtubeCommentRepliesTableSQLite.$infer
 export type NewYouTubeCommentReply = typeof youtubeCommentRepliesTableSQLite.$inferInsert;
 export type YouTubeUsage = typeof youtubeUsageTableSQLite.$inferSelect;
 export type NewYouTubeUsage = typeof youtubeUsageTableSQLite.$inferInsert;
-export type APICredential = typeof apiCredentialsTableSQLite.$inferSelect;
-export type NewAPICredential = typeof apiCredentialsTableSQLite.$inferInsert;

@@ -1,7 +1,7 @@
 import { useSQLite, sqliteDb, postgresDb } from './db';
 import { accountsTableSQLite, accountsTablePostgres } from './schema';
 import { eq, and } from 'drizzle-orm';
-import { decrypt } from './crypto';
+import { decrypt } from './encryption';
 import { logger } from './logger';
 
 /**
@@ -67,10 +67,10 @@ export async function getOAuthTokens(
       return null;
     }
 
-    // Decrypt tokens
-    const access_token = await decrypt(account.access_token);
-    const refresh_token = await decrypt(account.refresh_token);
-    const id_token = await decrypt(account.id_token);
+    // Decrypt tokens (only if they exist)
+    const access_token = account.access_token ? await decrypt(account.access_token) : null;
+    const refresh_token = account.refresh_token ? await decrypt(account.refresh_token) : null;
+    const id_token = account.id_token ? await decrypt(account.id_token) : null;
 
     return {
       access_token,
