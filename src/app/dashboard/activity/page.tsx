@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { AlertCircle, CheckCircle2, Clock, AlertTriangle, Activity } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -155,10 +155,7 @@ export default function ActivityPage() {
       <div className="p-6 space-y-4">
         {/* Header */}
         <div className="space-y-1 animate-fade-in">
-          <div className="flex items-center gap-2">
-            <Activity className="h-6 w-6 text-accent" />
-            <h1 className="font-black text-2xl tracking-tight">Activity</h1>
-          </div>
+          <h1 className="font-black text-2xl tracking-tight">Activity</h1>
           <p className="text-xs text-secondary">
             Job execution history • Auto-refreshes every 10s
           </p>

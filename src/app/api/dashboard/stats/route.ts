@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db, useSQLite } from '@/lib/db';
-import { tweetsTable, youtubeCommentsTable, tweetRepliesTable, appSettingsTable } from '@/lib/schema';
+import { jobLogsTable, appSettingsTable } from '@/lib/schema';
 import { eq, count, and, like } from 'drizzle-orm';
 
 export async function GET() {
@@ -15,27 +15,21 @@ export async function GET() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dbAny = db as any;
     const [
-      twitterPosted,
-      twitterReplies,
-      youtubeReplied,
+      successfulRuns,
+      failedRuns,
       enabledJobs,
     ] = await Promise.all([
-      // Count tweets with status 'posted'
+      // Count successful job executions
       dbAny.select({ count: count() })
-        .from(tweetsTable)
-        .where(eq(tweetsTable.status, 'posted')) as Promise<Array<{ count: number }>>,
+        .from(jobLogsTable)
+        .where(eq(jobLogsTable.status, 'success')) as Promise<Array<{ count: number }>>,
 
-      // Count tweet replies with status 'posted'
+      // Count failed job executions
       dbAny.select({ count: count() })
-        .from(tweetRepliesTable)
-        .where(eq(tweetRepliesTable.status, 'posted')) as Promise<Array<{ count: number }>>,
+        .from(jobLogsTable)
+        .where(eq(jobLogsTable.status, 'error')) as Promise<Array<{ count: number }>>,
 
-      // Count YouTube comments that have been replied to
-      dbAny.select({ count: count() })
-        .from(youtubeCommentsTable)
-        .where(eq(youtubeCommentsTable.status, 'replied')) as Promise<Array<{ count: number }>>,
-
-      // Count enabled automations (efficient database COUNT)
+      // Count enabled automations
       dbAny.select({ count: count() })
         .from(appSettingsTable)
         .where(and(
@@ -44,25 +38,19 @@ export async function GET() {
         )) as Promise<Array<{ count: number }>>,
     ]);
 
+    const successCount = successfulRuns[0]?.count || 0;
+    const failCount = failedRuns[0]?.count || 0;
     const activeJobsCount = enabledJobs[0]?.count || 0;
-
-    // Calculate total executions (tweets posted + replies posted + YouTube replies)
-    const totalExecutions =
-      (twitterPosted[0]?.count || 0) +
-      (twitterReplies[0]?.count || 0) +
-      (youtubeReplied[0]?.count || 0);
+    const totalExecutions = successCount + failCount;
 
     return NextResponse.json({
-      twitter: {
-        tweetsPosted: twitterPosted[0]?.count || 0,
-        repliesPosted: twitterReplies[0]?.count || 0,
-      },
-      youtube: {
-        commentsReplied: youtubeReplied[0]?.count || 0,
-      },
-      system: {
+      automations: {
+        successfulRuns: successCount,
+        failedRuns: failCount,
         activeJobs: activeJobsCount,
         totalExecutions,
+      },
+      system: {
         database: useSQLite ? 'SQLite' : 'PostgreSQL',
       },
     });

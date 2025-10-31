@@ -426,6 +426,96 @@ export const youtubeUsageTablePostgres = pgTable('youtube_usage', {
   windowStartIdx: pgIndex('youtube_usage_window_start_idx').on(table.windowStart),
 }));
 
+// WordPress posts table for SQLite (tracks our WordPress blog posts)
+export const wordpressPostsTableSQLite = sqliteTable('wordpress_posts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  postId: text('post_id').notNull(), // WordPress post ID
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  excerpt: text('excerpt'),
+  url: text('url'),
+  status: text('status').notNull().default('draft'), // draft, publish, scheduled, failed
+  topic: text('topic'), // News topic or category
+  featuredImage: text('featured_image'), // Image URL or media ID
+  categories: text('categories'), // JSON array of category IDs
+  tags: text('tags'), // JSON array of tag names
+  postedAt: integer('posted_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+}, (table) => ({
+  userIdIdx: sqliteIndex('wordpress_posts_user_id_idx').on(table.userId),
+  statusIdx: sqliteIndex('wordpress_posts_status_idx').on(table.status),
+  topicIdx: sqliteIndex('wordpress_posts_topic_idx').on(table.topic),
+  postedAtIdx: sqliteIndex('wordpress_posts_posted_at_idx').on(table.postedAt),
+  postIdIdx: sqliteIndex('wordpress_posts_post_id_idx').on(table.postId),
+}));
+
+// WordPress posts table for PostgreSQL
+export const wordpressPostsTablePostgres = pgTable('wordpress_posts', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  postId: varchar('post_id', { length: 255 }).notNull(), // WordPress post ID
+  title: pgText('title').notNull(),
+  content: pgText('content').notNull(),
+  excerpt: pgText('excerpt'),
+  url: varchar('url', { length: 1024 }),
+  status: varchar('status', { length: 50 }).notNull().default('draft'), // draft, publish, scheduled, failed
+  topic: varchar('topic', { length: 255 }), // News topic or category
+  featuredImage: varchar('featured_image', { length: 1024 }), // Image URL or media ID
+  categories: pgText('categories'), // JSON array of category IDs
+  tags: pgText('tags'), // JSON array of tag names
+  postedAt: timestamp('posted_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: pgIndex('wordpress_posts_user_id_idx').on(table.userId),
+  statusIdx: pgIndex('wordpress_posts_status_idx').on(table.status),
+  topicIdx: pgIndex('wordpress_posts_topic_idx').on(table.topic),
+  postedAtIdx: pgIndex('wordpress_posts_posted_at_idx').on(table.postedAt),
+  postIdIdx: pgIndex('wordpress_posts_post_id_idx').on(table.postId),
+}));
+
+// WordPress settings table for SQLite (stores WordPress configuration per user)
+export const wordpressSettingsTableSQLite = sqliteTable('wordpress_settings', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull().unique(),
+  siteUrl: text('site_url').notNull(),
+  username: text('username').notNull(),
+  applicationPassword: text('application_password').notNull(), // Encrypted
+  defaultCategory: text('default_category'), // Default category ID
+  defaultTags: text('default_tags'), // JSON array of default tag names
+  enabledTopics: text('enabled_topics'), // JSON array: ['tech', 'business', 'ai']
+  postFrequency: text('post_frequency'), // Cron expression
+  autoPublish: integer('auto_publish').default(0), // 0 = draft, 1 = publish
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+}, (table) => ({
+  userIdIdx: sqliteUniqueIndex('wordpress_settings_user_id_idx').on(table.userId),
+}));
+
+// WordPress settings table for PostgreSQL
+export const wordpressSettingsTablePostgres = pgTable('wordpress_settings', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull().unique(),
+  siteUrl: varchar('site_url', { length: 1024 }).notNull(),
+  username: varchar('username', { length: 255 }).notNull(),
+  applicationPassword: pgText('application_password').notNull(), // Encrypted
+  defaultCategory: varchar('default_category', { length: 255 }), // Default category ID
+  defaultTags: pgText('default_tags'), // JSON array of default tag names
+  enabledTopics: pgText('enabled_topics'), // JSON array: ['tech', 'business', 'ai']
+  postFrequency: varchar('post_frequency', { length: 100 }), // Cron expression
+  autoPublish: pgInteger('auto_publish').default(0), // 0 = draft, 1 = publish
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: pgUniqueIndex('wordpress_settings_user_id_idx').on(table.userId),
+}));
+
 
 // Export the appropriate tables based on environment
 // This will be imported and used throughout the app
@@ -441,6 +531,8 @@ export const jobLogsTable = useSQLite ? jobLogsTableSQLite : jobLogsTablePostgre
 export const twitterUsageTable = useSQLite ? twitterUsageTableSQLite : twitterUsageTablePostgres;
 export const youtubeCommentRepliesTable = useSQLite ? youtubeCommentRepliesTableSQLite : youtubeCommentRepliesTablePostgres;
 export const youtubeUsageTable = useSQLite ? youtubeUsageTableSQLite : youtubeUsageTablePostgres;
+export const wordpressPostsTable = useSQLite ? wordpressPostsTableSQLite : wordpressPostsTablePostgres;
+export const wordpressSettingsTable = useSQLite ? wordpressSettingsTableSQLite : wordpressSettingsTablePostgres;
 
 export type Tweet = typeof tweetsTableSQLite.$inferSelect;
 export type NewTweet = typeof tweetsTableSQLite.$inferInsert;
@@ -464,3 +556,7 @@ export type YouTubeCommentReply = typeof youtubeCommentRepliesTableSQLite.$infer
 export type NewYouTubeCommentReply = typeof youtubeCommentRepliesTableSQLite.$inferInsert;
 export type YouTubeUsage = typeof youtubeUsageTableSQLite.$inferSelect;
 export type NewYouTubeUsage = typeof youtubeUsageTableSQLite.$inferInsert;
+export type WordPressPost = typeof wordpressPostsTableSQLite.$inferSelect;
+export type NewWordPressPost = typeof wordpressPostsTableSQLite.$inferInsert;
+export type WordPressSettings = typeof wordpressSettingsTableSQLite.$inferSelect;
+export type NewWordPressSettings = typeof wordpressSettingsTableSQLite.$inferInsert;

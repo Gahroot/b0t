@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Twitter, Youtube, Instagram, Check, X, Loader2, Settings, Wand2, Cpu } from 'lucide-react';
+import { Twitter, Youtube, Instagram, Check, X, Loader2, Wand2, Cpu } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -279,10 +279,7 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Settings className="h-6 w-6 text-primary" />
-              <h1 className="font-black text-2xl tracking-tight">Settings</h1>
-            </div>
+            <h1 className="font-black text-2xl tracking-tight">Settings</h1>
             <p className="text-xs text-secondary">Connect your social media accounts</p>
           </div>
 

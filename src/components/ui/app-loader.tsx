@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Twitter, Youtube, Instagram, Loader2 } from 'lucide-react';
+import { Workflow, Zap, Loader2 } from 'lucide-react';
 
 /**
  * Initial app loading screen shown on page refresh
@@ -42,25 +42,22 @@ export function AppLoader() {
         {/* Logo/Icon Area */}
         <div className="relative">
           <div className="flex items-center gap-3">
-            {/* Platform Icons with staggered animation */}
+            {/* Automation Icons with staggered animation */}
             <div className="animate-bounce-subtle" style={{ animationDelay: '0s' }}>
-              <Twitter className="h-6 w-6 text-twitter-blue" />
+              <Workflow className="h-8 w-8 text-foreground/90" />
             </div>
             <div className="animate-bounce-subtle" style={{ animationDelay: '0.1s' }}>
-              <Youtube className="h-6 w-6 text-youtube-red" />
-            </div>
-            <div className="animate-bounce-subtle" style={{ animationDelay: '0.2s' }}>
-              <Instagram className="h-6 w-6 text-instagram-gradient-start" />
+              <Zap className="h-6 w-6 text-accent" />
             </div>
           </div>
         </div>
 
         {/* App Name */}
         <div className="text-center space-y-2">
-          <h1 className="font-black text-2xl tracking-tight">🐱 Social Cat</h1>
+          <h1 className="font-black text-2xl tracking-tight">b0t</h1>
           <div className="flex items-center gap-2 justify-center">
             <Loader2 className="h-4 w-4 animate-spin text-accent" />
-            <p className="text-xs text-secondary">Waking up the cat...</p>
+            <p className="text-xs text-secondary">Initializing workflows...</p>
           </div>
         </div>
       </div>

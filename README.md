@@ -1,159 +1,216 @@
-# Social Cat
+# b0t
 
-Run your social media on autopilot. This app monitors Twitter, YouTube, and Instagram, then uses AI to reply to people, post content, and keep you active 24/7 without lifting a finger.
+Build custom automation workflows with a visual editor. Connect APIs, services, and platforms to create powerful automations without writing code.
 
-## What does it actually do?
+## What is b0t?
 
-**For Twitter:**
-- Searches for tweets about topics you care about
-- Uses AI to write natural replies (not spammy bot stuff)
-- Posts tweets and threads automatically
-- Tracks trending topics and creates content about them
+b0t is a self-hosted automation platform that lets you build custom workflows through a visual, node-based editor. Think Zapier or n8n, but with first-class AI integration and production-grade reliability built-in.
 
-**For YouTube:**
-- Watches for new comments on your videos
-- Replies to top comments with AI-generated responses
-- Prioritizes comments with high engagement
+**Key Features:**
+- Visual workflow builder (drag-and-drop nodes)
+- Connect any API or service
+- Built-in AI actions for intelligent automation
+- Production-ready (circuit breakers, retries, rate limiting)
+- Real-time workflow monitoring
+- Self-hosted or cloud deployment
 
-**For Instagram:**
-- Framework is ready, features coming soon
+## Current State
 
-Everything runs on a schedule you control. Set it to reply every 2 hours, post every 4 hours, or whatever works for you.
+b0t is in early development. The current codebase includes:
+
+**Working:**
+- Core infrastructure (Next.js, DB, job queue)
+- Pre-built social media automations (Twitter, YouTube, Instagram, WordPress)
+- Authentication and user management
+- Job scheduling with BullMQ/Redis
+- AI integration with OpenAI
+
+**In Progress:**
+- Visual workflow builder
+- Connector/integration system
+- Workflow execution engine
+- Templates library
+
+The existing social media automations serve as reference implementations and will be migrated to the new workflow system.
 
 ## Quick Start
 
-**Option 1: Deploy in 5 minutes (easiest)**
+**Prerequisites:**
+- Node.js 20+
+- OpenAI API key (for AI features)
+- Optional: Redis (for persistent job queue)
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/social-cat)
-
-Railway handles the database, hosting, and automatic deployments. You just add your API keys and you're done.
-
-**Option 2: Run it locally**
+**Run Locally:**
 
 ```bash
-git clone https://github.com/yourusername/social-cat.git
-cd social-cat
+git clone https://github.com/yourusername/b0t.git
+cd b0t
 npm install
+
+# Setup environment
 cp .env.example .env.local
-
-# Generate a secret key
+# Generate auth secret
 openssl rand -base64 32
+# Add to .env.local as AUTH_SECRET
 
-# Add that key to .env.local as AUTH_SECRET
 # Start the app
 npm run dev
 ```
 
-Open `http://localhost:3000` and login with whatever email/password you set in `.env.local`
+Open `http://localhost:3000` and login with credentials from `.env.local`
 
-## What you need to get started
+**Deploy to Railway:**
 
-**Required:**
-- OpenAI API key (this powers the AI responses)
-- An admin password (just pick one)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/b0t)
 
-**Optional but recommended:**
-- Twitter API credentials (for Twitter features)
-- YouTube API credentials (for YouTube features)
-- Instagram access token (for Instagram features)
-- Redis URL (makes jobs survive restarts - Railway provides this free)
+Railway handles database, Redis, and automatic deployments. Just add your API keys.
 
-The app works without social media credentials, but you'll only be able to test the UI. Connect at least one platform to actually use it.
+## How It Works (Vision)
 
-## How it works
+1. **Build Workflows Visually**
+   - Drag nodes onto canvas (triggers, actions, conditions, AI)
+   - Connect nodes to define data flow
+   - Configure each node (API calls, transformations, etc.)
 
-1. You connect your social media accounts through the settings page
-2. You tell it what to look for (like "tweets about AI" or "comments on my videos")
-3. You customize how the AI should respond (casual, professional, funny, etc)
-4. You turn on the automations with a toggle switch
-5. The app runs in the background and handles everything
+2. **Connect Services**
+   - Pre-built connectors for popular APIs
+   - HTTP request node for custom integrations
+   - OAuth handling built-in
 
-The AI reads the original post/comment, understands the context, and writes a response that sounds like you. You can review everything from the dashboard.
+3. **Add Intelligence**
+   - AI nodes for content generation, classification, extraction
+   - Decision nodes based on AI analysis
+   - Custom prompts and model selection
 
-## Tech stack (for developers)
+4. **Run Reliably**
+   - Scheduled or trigger-based execution
+   - Automatic retries with exponential backoff
+   - Circuit breakers for failing APIs
+   - Activity logs and monitoring
 
-- **Next.js 15** with React 19 and App Router
-- **PostgreSQL** for production, SQLite for local dev (auto-detected)
-- **Drizzle ORM** for database queries
-- **BullMQ + Redis** for reliable job scheduling (or node-cron if you skip Redis)
-- **OpenAI GPT-4** for content generation
-- **NextAuth v5** for authentication
-- **Tailwind CSS** and shadcn/ui for the interface
-- **Railway** for deployment (but works anywhere)
+## Example Use Cases
 
-## Project structure
+- **Social Media Automation:** Monitor mentions, generate replies, schedule posts
+- **Content Pipeline:** Scrape content, summarize with AI, publish to blog
+- **Data Processing:** Fetch data from API, transform, sync to database
+- **Notification Workflows:** Monitor events, filter with AI, send alerts
+- **Lead Qualification:** Receive form submission, score with AI, route to CRM
+
+## Tech Stack
+
+- **Next.js 15** - React 19, App Router, Server Actions
+- **PostgreSQL** - Production database (SQLite for local dev)
+- **Drizzle ORM** - Type-safe database queries
+- **BullMQ + Redis** - Reliable job queue (node-cron fallback)
+- **@xyflow/react** - Visual workflow builder
+- **OpenAI SDK** - AI capabilities
+- **NextAuth v5** - Authentication
+- **Tailwind CSS + shadcn/ui** - Design system
+
+## Project Structure
 
 ```
 src/
-  app/              Next.js pages and API routes
-    api/            REST endpoints for everything
-    dashboard/      Main dashboard UI
-    settings/       Connect accounts and configure
-  components/       React components
-  lib/              Core logic
-    jobs/           Scheduled automation jobs
-    workflows/      Multi-step automation pipelines
-    [platform].ts   API clients for Twitter, YouTube, etc
+  ├── app/              # Next.js pages and API routes
+  │   ├── api/         # REST endpoints
+  │   ├── dashboard/   # Main dashboard
+  │   ├── workflows/   # Workflow builder (coming soon)
+  │   └── settings/    # Configuration
+  ├── components/       # React components
+  │   ├── ui/          # Design system
+  │   ├── workflow/    # Workflow builder UI (coming soon)
+  │   └── automation/  # Automation controls
+  ├── lib/             # Core business logic
+  │   ├── jobs/        # Job scheduling
+  │   ├── workflows/   # Workflow execution engine (coming soon)
+  │   ├── connectors/  # API integrations
+  │   └── schema.ts    # Database models
+```
+
+## Development
+
+**Run dev server:**
+```bash
+npm run dev
+```
+
+**Code quality:**
+```bash
+npm run lint          # ESLint
+npm run typecheck     # TypeScript
+npm run test          # Vitest
+```
+
+**Database:**
+```bash
+npm run db:push       # Push schema changes
+npm run db:studio     # Visual database browser
 ```
 
 ## Configuration
 
-All settings live in the database and can be changed from the UI. No need to redeploy to adjust schedules or prompts.
+All automation settings are stored in the database and configurable through the UI.
 
-**Job schedules (customizable):**
-- Reply to tweets: every 2 hours
-- Post tweets: every 4 hours
-- Check YouTube comments: every 30 minutes
-- Reply to YouTube comments: as needed
-
-**Rate limits (built-in protection):**
-- Twitter: 50 actions per hour
-- OpenAI: 500 requests per minute
-- Automatic retries with exponential backoff
-
-## Important features for reliability
-
-**Circuit breakers** - If an API starts failing, the app stops hitting it and tries again later
-
-**Rate limiting** - Never exceeds API quotas, even if you run multiple jobs at once
-
-**Duplicate prevention** - Tracks what it's already replied to so it never repeats itself
-
-**Job persistence** - With Redis, jobs survive app restarts and redeployments
-
-**Activity logs** - See exactly what happened, when, and why
-
-## Commands for development
-
+**Environment Variables (`.env.local`):**
 ```bash
-npm run dev             # Start dev server with hot reload
-npm run build           # Build for production
-npm run lint            # Check code quality
-npm run db:push         # Update database schema
-npm run db:studio       # Open database browser
+# Required
+OPENAI_API_KEY=         # For AI features
+AUTH_SECRET=            # Generate with: openssl rand -base64 32
+ADMIN_EMAIL=            # Admin login
+ADMIN_PASSWORD=         # Admin password
 
-# Railway integration
-npm run railway:sync    # Sync local .env to Railway
-npm run railway:env     # Preview what would sync
+# Optional
+DATABASE_URL=           # PostgreSQL (defaults to SQLite)
+REDIS_URL=              # For persistent jobs
+UPSTASH_REDIS_REST_URL= # For rate limiting
 ```
 
-## Security notes
+## Reliability Features
 
-- OAuth tokens are encrypted before storage
-- Single-user app by default (add your own auth if you want multi-user)
-- Rate limiting prevents abuse
-- All API keys stored in environment variables, never in code
+- **Circuit Breakers** - Stop calling failing APIs, retry later
+- **Rate Limiting** - Never exceed API quotas
+- **Duplicate Prevention** - Track processed items
+- **Job Persistence** - Workflows survive restarts (with Redis)
+- **Error Handling** - Retries with exponential backoff
+- **Observability** - Activity logs and monitoring
 
-## Need help?
+## Roadmap
 
-Check the setup guides in `/docs/setup/` for step-by-step instructions with screenshots:
-- `TWITTER.md` - Get Twitter API access
-- `OPENAI.md` - Get your OpenAI key
-- `YOUTUBE.md` - Connect YouTube
-- `DEPLOYMENT.md` - Full Railway deployment guide
+**Phase 1 (Current):**
+- [x] Core infrastructure
+- [x] Job scheduling system
+- [x] Pre-built social automations
+- [ ] Visual workflow builder
+- [ ] Workflow execution engine
 
-The dashboard shows alerts when services aren't connected and links directly to setup guides.
+**Phase 2:**
+- [ ] Connector marketplace
+- [ ] Workflow templates
+- [ ] Advanced AI nodes
+- [ ] Multi-user support
+- [ ] Team collaboration
+
+**Phase 3:**
+- [ ] Workflow versioning
+- [ ] A/B testing
+- [ ] Analytics dashboard
+- [ ] Webhook triggers
+- [ ] API for headless usage
+
+## Contributing
+
+Contributions welcome! This project is in early development and evolving quickly.
+
+**Areas needing help:**
+- Visual workflow builder UI
+- Additional connectors/integrations
+- Documentation and examples
+- Testing and bug reports
 
 ## License
 
 MIT - use it however you want
+
+---
+
+**Note:** b0t is in active development. Expect breaking changes as we build toward v1.0.

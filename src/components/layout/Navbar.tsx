@@ -2,13 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Cat } from 'lucide-react';
+import { Workflow } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Twitter', href: '/twitter' },
-  { name: 'YouTube', href: '/youtube' },
-  { name: 'Instagram', href: '/instagram' },
+  { name: 'Social Media', href: '/social-media' },
+  { name: 'Content', href: '/content' },
   { name: 'Activity', href: '/dashboard/activity' },
   { name: 'Limits', href: '/dashboard/limits' },
   { name: 'Settings', href: '/settings' },
@@ -22,13 +21,13 @@ export function Navbar() {
       <div className="flex h-16 items-center px-8">
         {/* Left: Logo */}
         <Link href="/dashboard" className="flex items-center group">
-          <Cat className="h-[18px] w-[18px] text-foreground/90 transition-all duration-200 group-hover:text-foreground group-hover:scale-110" />
+          <Workflow className="h-[18px] w-[18px] text-foreground/90 transition-all duration-200 group-hover:text-foreground group-hover:scale-110" />
         </Link>
 
         {/* Center-Left: Brand Name */}
         <div className="ml-2 flex-shrink-0">
           <span className="text-[13px] font-light tracking-tight text-muted-foreground/60">
-            Social Cat
+            b0t
           </span>
         </div>
 

@@ -10,6 +10,7 @@ import {
   postTweetsJob,
   checkAndReplyToYouTubeComments,
   fetchYouTubeCommentsForAnalysis,
+  wordpressAutoBlogJob,
 } from '@/lib/jobs';
 import { replyToYouTubeCommentsJob } from '@/lib/jobs/youtube-reply';
 import { checkStrictRateLimit } from '@/lib/ratelimit';
@@ -50,6 +51,7 @@ const availableJobs: Record<string, (params?: unknown) => Promise<void>> = {
   'check-youtube-comments': checkAndReplyToYouTubeComments as (params?: unknown) => Promise<void>,
   'reply-to-youtube-comments': replyToYouTubeCommentsJob as (params?: unknown) => Promise<void>,
   'fetch-youtube-comments-analysis': fetchYouTubeCommentsForAnalysis as (params?: unknown) => Promise<void>,
+  'wordpress-auto-blog': wordpressAutoBlogJob as (params?: unknown) => Promise<void>,
 };
 
 export async function POST(request: NextRequest) {

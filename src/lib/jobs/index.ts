@@ -4,6 +4,7 @@ import { generateAndPostTweet, analyzeTrends, generateScheduledContent } from '.
 import { replyToTweetsJob } from './twitter-reply';
 import { postTweetsJob } from './twitter-post';
 import { checkAndReplyToYouTubeComments, trackYouTubeVideo, fetchYouTubeCommentsForAnalysis } from './youtube';
+import { wordpressAutoBlogJob } from './wordpress-auto-blog';
 import { initializeBullMQJobs, isBullMQAvailable } from './bullmq-jobs';
 import { logger } from '../logger';
 import { db } from '../db';
@@ -88,6 +89,14 @@ const jobs: ScheduledJob[] = [
     schedule: '0 */6 * * *', // Every 6 hours
     task: fetchYouTubeCommentsForAnalysis,
     enabled: false, // Enable this to fetch comments for analysis (no replies)
+  },
+
+  // WordPress jobs (disabled by default - enable when ready)
+  {
+    name: 'wordpress-auto-blog',
+    schedule: '0 */6 * * *', // Every 6 hours
+    task: wordpressAutoBlogJob,
+    enabled: false, // Enable this to automatically generate and post blog posts to WordPress
   },
 ];
 
@@ -200,4 +209,5 @@ export {
   checkAndReplyToYouTubeComments,
   trackYouTubeVideo,
   fetchYouTubeCommentsForAnalysis,
+  wordpressAutoBlogJob,
 };

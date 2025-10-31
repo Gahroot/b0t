@@ -175,6 +175,20 @@ export function createRapidAPICircuitBreaker<T extends (...args: any[]) => Promi
   });
 }
 
+// WordPress API circuit breaker
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createWordPressCircuitBreaker<T extends (...args: any[]) => Promise<any>>(
+  fn: T
+): CircuitBreaker<Parameters<T>, ReturnType<T>> {
+  return createCircuitBreaker(fn, {
+    timeout: 15000,              // 15 seconds for WordPress (can be slow)
+    errorThresholdPercentage: 50,
+    resetTimeout: 60000,         // Wait 1 minute before retry
+    volumeThreshold: 3,
+    name: `wordpress:${fn.name}`,
+  });
+}
+
 /**
  * Helper: Create circuit breaker with fallback
  */

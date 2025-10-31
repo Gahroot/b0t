@@ -307,3 +307,68 @@ export const generateTweetReply = withRateLimit(
     generateTweetReplyWithBreaker.fire(originalTweet, systemPrompt),
   openaiRateLimiter
 );
+
+/**
+ * Generate blog post content (internal, unprotected)
+ *
+ * @param prompt - The prompt describing what the blog post should be about
+ * @param systemPrompt - Optional custom system prompt to control tone/style
+ * @returns Generated blog post content
+ */
+async function generateBlogPostInternal(
+  prompt: string,
+  systemPrompt?: string
+): Promise<string> {
+  logger.info(
+    { promptLength: prompt.length, hasSystemPrompt: !!systemPrompt },
+    'Generating blog post with AI'
+  );
+
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+  // Only add system prompt if provided by caller
+  if (systemPrompt) {
+    messages.push({
+      role: 'system',
+      content: systemPrompt,
+    });
+  }
+
+  messages.push({
+    role: 'user',
+    content: prompt,
+  });
+
+  const model = await getSelectedModel();
+
+  // GPT-5 models don't support any optional parameters (temperature, max_tokens, etc)
+  // Only GPT-4o models support these parameters
+  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3');
+
+  const completionParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
+    model,
+    messages,
+    ...(isGPT5
+      ? {} // No optional parameters for GPT-5
+      : { max_tokens: 2000, temperature: 0.7 } // Higher token limit for blog posts
+    ),
+  };
+
+  const completion = await openai.chat.completions.create(completionParams);
+
+  const result = completion.choices[0]?.message?.content || '';
+  logger.info({ resultLength: result.length }, 'Blog post generated successfully');
+  return result;
+}
+
+/**
+ * Generate blog post content (protected with circuit breaker + rate limiting)
+ *
+ * @param prompt - The prompt describing what the blog post should be about
+ * @param systemPrompt - Optional custom system prompt to control tone/style
+ */
+const generateBlogPostWithBreaker = createOpenAICircuitBreaker(generateBlogPostInternal);
+export const generateBlogPost = withRateLimit(
+  (prompt: string, systemPrompt?: string) => generateBlogPostWithBreaker.fire(prompt, systemPrompt),
+  openaiRateLimiter
+);

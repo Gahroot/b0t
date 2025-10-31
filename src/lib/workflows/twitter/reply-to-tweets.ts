@@ -1,3 +1,6 @@
+// ============================================================================
+// EXTERNAL MODULES - Reusable library wrappers (like n8n nodes)
+// ============================================================================
 import { createPipeline } from '../Pipeline';
 import { searchTwitter, type Tweet } from '@/lib/rapidapi/twitter';
 import { replyToTweet } from '@/lib/twitter';
@@ -27,6 +30,9 @@ import { inArray } from 'drizzle-orm';
  * 6. Save to database
  */
 
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 interface WorkflowContext {
   searchQuery: string;
   systemPrompt?: string;
@@ -48,6 +54,10 @@ interface WorkflowConfig {
     removePostsWithMedia?: boolean;
   };
 }
+
+// ============================================================================
+// HELPER FUNCTIONS - Pure utility functions for data processing
+// ============================================================================
 
 /**
  * Calculate engagement score for a tweet
@@ -94,6 +104,10 @@ function selectBestTweet(tweets: Tweet[]): Tweet | null {
   return tweetsWithScores[0].tweet;
 }
 
+// ============================================================================
+// MAIN WORKFLOW FUNCTION - Orchestrates the entire automation pipeline
+// ============================================================================
+
 export async function replyToTweetsWorkflow(config: WorkflowConfig) {
   const initialContext: WorkflowContext = {
     searchQuery: config.searchQuery,
@@ -104,13 +118,19 @@ export async function replyToTweetsWorkflow(config: WorkflowConfig) {
 
   const isDryRun = config.dryRun || false;
 
+  // Initialize the pipeline engine
   const pipeline = createPipeline<WorkflowContext>();
 
   // Prepare search parameters with defaults
   const searchParams = config.searchParams || {};
   const today = new Date().toISOString().split('T')[0];
 
+  // ============================================================================
+  // PIPELINE STEPS - Each step is an async function that transforms the context
+  // ============================================================================
+
   const result = await pipeline
+    // STEP 1: Search for tweets using external Twitter API module
     .step('search-tweets', async (ctx) => {
       logger.info({ query: ctx.searchQuery, searchParams }, '🔍 Searching for tweets');
 
@@ -131,6 +151,7 @@ export async function replyToTweetsWorkflow(config: WorkflowConfig) {
       logger.info({ count: results.results.length }, '✅ Found tweets');
       return { ...ctx, tweets: results.results };
     })
+    // STEP 2: Filter out already-replied tweets using database module
     .step('filter-already-replied', async (ctx) => {
       logger.info({ totalTweets: ctx.tweets.length }, '🔍 Checking for already-replied tweets');
 
@@ -175,6 +196,7 @@ export async function replyToTweetsWorkflow(config: WorkflowConfig) {
 
       return { ...ctx, tweets: filteredTweets };
     })
+    // STEP 3: Select best tweet using helper function
     .step('select-hottest', async (ctx) => {
       logger.info('🎯 Selecting best tweet to reply to');
 
@@ -198,6 +220,7 @@ export async function replyToTweetsWorkflow(config: WorkflowConfig) {
 
       return { ...ctx, selectedTweet: selected };
     })
+    // STEP 4: Generate AI reply using OpenAI module
     .step('generate-reply', async (ctx) => {
       if (!ctx.selectedTweet) {
         throw new Error('No tweet selected');
@@ -218,6 +241,7 @@ export async function replyToTweetsWorkflow(config: WorkflowConfig) {
 
       return { ...ctx, generatedReply: reply };
     })
+    // STEP 5: Post reply to Twitter using Twitter API module
     .step('post-reply', async (ctx): Promise<WorkflowContext> => {
       if (!ctx.selectedTweet || !ctx.generatedReply) {
         throw new Error('Missing tweet or reply');
@@ -251,6 +275,7 @@ export async function replyToTweetsWorkflow(config: WorkflowConfig) {
 
       return { ...ctx, replyResult: result };
     })
+    // STEP 6: Save reply data to database
     .step('save-to-database', async (ctx): Promise<WorkflowContext> => {
       if (!ctx.selectedTweet || !ctx.generatedReply) {
         throw new Error('Missing tweet or reply');

@@ -170,6 +170,17 @@ export const rapidApiRateLimiter = createRateLimiter({
   id: 'rapidapi',
 });
 
+// WordPress API Rate Limiter
+// Conservative: 50 posts per hour (1 post every ~72 seconds)
+export const wordpressRateLimiter = createRateLimiter({
+  maxConcurrent: 1,
+  minTime: 72000,                // Min 72 seconds between posts
+  reservoir: 50,                 // 50 posts
+  reservoirRefreshAmount: 50,
+  reservoirRefreshInterval: 60 * 60 * 1000, // Per hour
+  id: 'wordpress-api',
+});
+
 /**
  * Wrap a function with rate limiting
  */
@@ -221,6 +232,7 @@ export async function stopAllRateLimiters() {
     openaiRateLimiter,
     instagramRateLimiter,
     rapidApiRateLimiter,
+    wordpressRateLimiter,
   ];
 
   logger.info('Stopping all rate limiters');

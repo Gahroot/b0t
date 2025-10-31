@@ -14,6 +14,7 @@ import {
   checkAndReplyToYouTubeComments,
   fetchYouTubeCommentsForAnalysis,
 } from '@/lib/jobs/youtube';
+import { wordpressAutoBlogJob } from '@/lib/jobs/wordpress-auto-blog';
 
 /**
  * API Route: Control individual jobs (start/stop)
@@ -35,6 +36,7 @@ const JOB_TASKS: Record<string, () => void | Promise<void>> = {
   'analyze-trends': analyzeTrends,
   'check-youtube-comments': checkAndReplyToYouTubeComments,
   'fetch-youtube-comments-analysis': fetchYouTubeCommentsForAnalysis,
+  'wordpress-auto-blog': wordpressAutoBlogJob,
 };
 
 export async function POST(request: NextRequest) {

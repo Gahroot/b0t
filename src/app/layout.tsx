@@ -23,10 +23,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Social Cat",
-  description: "AI-powered social media automation platform",
+  title: "b0t - Build Custom Automations",
+  description: "Visual automation platform for building custom workflows. Connect APIs, services, and platforms to create powerful automations.",
   icons: {
-    icon: '/cat-icon.svg',
+    icon: '/cat-icon.svg', // TODO: Update to workflow icon
   },
 };
 

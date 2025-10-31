@@ -1,6 +1,6 @@
 # Scripts
 
-Utility scripts for the Social Cat project.
+Utility scripts for the b0t project.
 
 ## Export Railway Environment Variables
 
@@ -63,8 +63,8 @@ AUTH_URL=http://localhost:3000
 YOUTUBE_REDIRECT_URI=http://localhost:3000/api/youtube/callback
 
 # Automatically becomes in Railway (production)
-AUTH_URL=https://social-cat-production.up.railway.app
-YOUTUBE_REDIRECT_URI=https://social-cat-production.up.railway.app/api/youtube/callback
+AUTH_URL=https://b0t-production.up.railway.app
+YOUTUBE_REDIRECT_URI=https://b0t-production.up.railway.app/api/youtube/callback
 ```
 
 **Environment Conversion:**
@@ -91,7 +91,7 @@ Make sure these are set in Railway for production:
 
 **Required:**
 - `AUTH_SECRET` - Generate with: `openssl rand -base64 32`
-- `AUTH_URL` - Your Railway app URL (e.g., `https://social-cat-production.up.railway.app`)
+- `AUTH_URL` - Your Railway app URL (e.g., `https://b0t-production.up.railway.app`)
 - `ADMIN_EMAIL` - Your admin login email
 - `ADMIN_PASSWORD` - Your admin password
 - `NODE_ENV` - Should be `production`
