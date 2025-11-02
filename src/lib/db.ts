@@ -6,8 +6,15 @@ import { Pool } from 'pg';
 // Determine which database to use based on environment
 const databaseUrl = process.env.DATABASE_URL;
 
-// Use SQLite if DATABASE_URL is not set (local development or build time)
-// Use PostgreSQL when DATABASE_URL is set (Railway production)
+// Log for debugging
+if (databaseUrl) {
+  console.log('🗄️  DATABASE_URL detected:', databaseUrl.substring(0, 30) + '...');
+} else {
+  console.log('⚠️  DATABASE_URL not set - falling back to SQLite');
+}
+
+// Always use PostgreSQL when DATABASE_URL is set
+// Only fallback to SQLite during build time when no DATABASE_URL is available
 const useSQLite = !databaseUrl;
 
 let db: ReturnType<typeof drizzleSQLite> | ReturnType<typeof drizzlePostgres>;

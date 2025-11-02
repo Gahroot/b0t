@@ -12,6 +12,29 @@
  * For development, you need to enable it in next.config.ts
  */
 
+// Force load environment variables before anything else
+if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  // In development, manually load .env.local before any imports
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { config } = require('dotenv');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { expand } = require('dotenv-expand');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require('path');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require('fs');
+
+    const envLocalPath = path.resolve(process.cwd(), '.env.local');
+    if (fs.existsSync(envLocalPath)) {
+      const myEnv = config({ path: envLocalPath });
+      expand(myEnv);
+    }
+  } catch {
+    // Dotenv might not be available, Next.js will handle it
+  }
+}
+
 export async function register() {
   // Only run in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === 'nodejs') {

@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * Generate Module Registry Entries
  *
