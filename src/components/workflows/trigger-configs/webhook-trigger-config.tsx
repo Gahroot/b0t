@@ -89,20 +89,21 @@ export function WebhookTriggerConfig({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 py-4">
       <div className="space-y-2">
         <Label>Webhook URL</Label>
-        <div className="flex gap-2">
+        <div className="flex gap-2 min-w-0">
           <Input
             value={webhookUrl}
             readOnly
-            className="font-mono text-xs"
+            className="font-mono text-xs flex-1 min-w-0"
           />
           <Button
             variant="outline"
             size="icon"
             onClick={copyToClipboard}
             title="Copy URL"
+            className="flex-shrink-0"
           >
             {copied ? (
               <Check className="h-4 w-4 text-green-600" />

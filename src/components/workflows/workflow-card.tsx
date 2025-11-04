@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Download, Trash2, Workflow as WorkflowIcon, Play, Key, MessageSquare, Sliders, BarChart3, Pencil } from 'lucide-react';
+import { Download, Trash2, Play, Key, MessageSquare, Sliders, BarChart3, Pencil, Clock, Webhook, Send } from 'lucide-react';
 import { WorkflowListItem } from '@/types/workflows';
 import { WorkflowExecutionDialog } from './workflow-execution-dialog';
 import { CredentialsConfigDialog } from './credentials-config-dialog';
@@ -162,6 +162,22 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
     });
   };
 
+  const getTriggerIcon = () => {
+    switch (workflow.trigger.type) {
+      case 'chat':
+        return MessageSquare;
+      case 'cron':
+        return Clock;
+      case 'webhook':
+        return Webhook;
+      case 'telegram':
+      case 'discord':
+        return Send;
+      default:
+        return Play;
+    }
+  };
+
   const runButtonConfig = (() => {
     switch (workflow.trigger.type) {
       case 'chat':
@@ -175,6 +191,7 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
     }
   })();
 
+  const TriggerIcon = getTriggerIcon();
   const RunIcon = runButtonConfig.icon;
 
   return (
@@ -198,7 +215,7 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
         </div>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <WorkflowIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <TriggerIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <CardTitle className="card-title truncate" title={workflow.name}>
               {workflow.name.length > 35 ? `${workflow.name.slice(0, 35)}...` : workflow.name}
             </CardTitle>
