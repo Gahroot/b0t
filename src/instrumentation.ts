@@ -76,14 +76,24 @@ export async function register() {
     const { initializeWorkflowQueue } = await import('./lib/workflows/workflow-queue');
     const { workflowScheduler } = await import('./lib/workflows/workflow-scheduler');
 
-    // Initialize workflow queue (10 concurrent workflows by default)
+    // Initialize workflow queue
+    // Concurrency automatically configured based on environment:
+    // - Development: 20 concurrent workflows (WORKFLOW_CONCURRENCY env var or default)
+    // - Production: 100 concurrent workflows (or WORKFLOW_CONCURRENCY env var)
+    // - Worker mode: Configurable per worker instance
+    //
     // Note: Queue initialization runs in background, don't await the worker
-    initializeWorkflowQueue({
-      concurrency: 10,  // Run up to 10 workflows simultaneously
-      maxJobsPerMinute: 100,  // Rate limit: max 100 workflow executions per minute
-    }).then(queueInitialized => {
+    initializeWorkflowQueue().then(queueInitialized => {
       if (queueInitialized) {
-        logger.info('✅ Workflow queue initialized (Redis-backed)');
+        const concurrency = parseInt(
+          process.env.WORKFLOW_CONCURRENCY ||
+          (process.env.NODE_ENV === 'production' ? '100' : '20'),
+          10
+        );
+        logger.info(
+          { concurrency },
+          '✅ Workflow queue initialized (Redis-backed)'
+        );
       } else {
         logger.info('⚠️  Workflow queue disabled (no Redis) - using direct execution');
       }

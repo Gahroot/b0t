@@ -8,6 +8,10 @@ import { eq } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { randomUUID } from 'crypto';
 import { executeStep, normalizeStep, type WorkflowStep } from './control-flow';
+import {
+  executeStepsInParallel,
+  analyzeParallelizationPotential,
+} from './parallel-executor';
 
 /**
  * Workflow Executor
@@ -110,54 +114,73 @@ export async function executeWorkflow(
       userId,
     };
 
+    // Normalize all steps first
+    const normalizedSteps = config.steps.map((step) => normalizeStep(step) as WorkflowStep);
+
+    // Analyze parallelization potential
+    const parallelAnalysis = analyzeParallelizationPotential(normalizedSteps, context);
+    logger.info(
+      {
+        workflowId,
+        runId,
+        ...parallelAnalysis,
+      },
+      'Workflow parallelization analysis'
+    );
+
     let lastOutput: unknown = null;
 
-    // Execute steps sequentially (with control flow support)
-    for (const step of config.steps) {
-      const normalizedStep = normalizeStep(step) as WorkflowStep;
-      logger.info({ workflowId, runId, stepId: normalizedStep.id }, 'Executing step');
+    try {
+      // Execute steps with automatic parallel execution
+      lastOutput = await executeStepsInParallel(
+        normalizedSteps,
+        context,
+        async (step, ctx) => {
+          return await executeStep(
+            step,
+            ctx,
+            executeModuleFunction,
+            resolveVariables
+          );
+        }
+      );
+    } catch (error) {
+      logger.error({ error, workflowId, runId }, 'Workflow execution failed');
 
-      try {
-        // Execute step (supports actions, conditions, loops)
-        lastOutput = await executeStep(
-          normalizedStep,
-          context,
-          executeModuleFunction,
-          resolveVariables
-        );
-      } catch (error) {
-        logger.error({ error, workflowId, runId, stepId: normalizedStep.id }, 'Step execution failed');
+      // Find which step failed (if available in error)
+      const errorStep = error instanceof Error && 'stepId' in error
+        ? (error as unknown as { stepId: string }).stepId
+        : undefined;
 
-        // Update workflow run with error
-        const completedAt = new Date();
-        await db
-          .update(workflowRunsTable)
-          .set({
-            status: 'error',
-            completedAt,
-            duration: completedAt.getTime() - startedAt.getTime(),
-            error: error instanceof Error ? error.message : 'Unknown error',
-            errorStep: step.id,
-          })
-          .where(eq(workflowRunsTable.id, runId));
-
-        // Update workflow last run status
-        await db
-          .update(workflowsTable)
-          .set({
-            lastRun: completedAt,
-            lastRunStatus: 'error',
-            lastRunError: error instanceof Error ? error.message : 'Unknown error',
-            runCount: workflow.runCount + 1,
-          })
-          .where(eq(workflowsTable.id, workflowId));
-
-        return {
-          success: false,
+      // Update workflow run with error
+      const completedAt = new Date();
+      await db
+        .update(workflowRunsTable)
+        .set({
+          status: 'error',
+          completedAt,
+          duration: completedAt.getTime() - startedAt.getTime(),
           error: error instanceof Error ? error.message : 'Unknown error',
-          errorStep: normalizedStep.id,
-        };
-      }
+          errorStep: errorStep || 'unknown',
+        })
+        .where(eq(workflowRunsTable.id, runId));
+
+      // Update workflow last run status
+      await db
+        .update(workflowsTable)
+        .set({
+          lastRun: completedAt,
+          lastRunStatus: 'error',
+          lastRunError: error instanceof Error ? error.message : 'Unknown error',
+          runCount: workflow.runCount + 1,
+        })
+        .where(eq(workflowsTable.id, workflowId));
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        errorStep: errorStep || 'unknown',
+      };
     }
 
     // Update workflow run with success
@@ -638,28 +661,50 @@ export async function executeWorkflowConfig(
     userId,
   };
 
+  // Normalize all steps first
+  const normalizedSteps = config.steps.map((step) => normalizeStep(step) as WorkflowStep);
+
+  // Analyze parallelization potential
+  const parallelAnalysis = analyzeParallelizationPotential(normalizedSteps, context);
+  logger.info(
+    {
+      runId,
+      ...parallelAnalysis,
+    },
+    'Workflow config parallelization analysis'
+  );
+
   let lastOutput: unknown = null;
 
   try {
-    for (const step of config.steps) {
-      const normalizedStep = normalizeStep(step) as WorkflowStep;
-      logger.info({ runId, stepId: normalizedStep.id }, 'Executing step');
-
-      lastOutput = await executeStep(
-        normalizedStep,
-        context,
-        executeModuleFunction,
-        resolveVariables
-      );
-    }
+    // Execute steps with automatic parallel execution
+    lastOutput = await executeStepsInParallel(
+      normalizedSteps,
+      context,
+      async (step, ctx) => {
+        return await executeStep(
+          step,
+          ctx,
+          executeModuleFunction,
+          resolveVariables
+        );
+      }
+    );
 
     logger.info({ runId }, 'Workflow config execution completed');
     return { success: true, output: lastOutput };
   } catch (error) {
     logger.error({ error, runId }, 'Workflow config execution failed');
+
+    // Find which step failed (if available in error)
+    const errorStep = error instanceof Error && 'stepId' in error
+      ? (error as unknown as { stepId: string }).stepId
+      : undefined;
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
+      errorStep,
     };
   }
 }

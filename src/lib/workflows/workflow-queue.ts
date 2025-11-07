@@ -29,13 +29,26 @@ export interface WorkflowJobData {
 /**
  * Initialize the workflow execution queue and worker
  * Call this on app startup (once)
+ *
+ * Scaling configurations:
+ * - Development: 20 concurrent workflows (single instance)
+ * - Production (vertical): 100 concurrent workflows (single powerful instance)
+ * - Production (horizontal): 50 concurrent per worker (multiple worker instances)
  */
 export async function initializeWorkflowQueue(options?: {
-  concurrency?: number;  // How many workflows to run simultaneously (default: 10)
-  maxJobsPerMinute?: number;  // Rate limit (default: 100)
+  concurrency?: number;  // How many workflows to run simultaneously
+  maxJobsPerMinute?: number;  // Rate limit (default: 300)
 }) {
-  const concurrency = options?.concurrency || 10;
-  const maxJobsPerMinute = options?.maxJobsPerMinute || 100;
+  // Environment-based concurrency defaults
+  // Development: 20, Production vertical: 100, Production horizontal: 50 per worker
+  const defaultConcurrency = parseInt(
+    process.env.WORKFLOW_CONCURRENCY ||
+    (process.env.NODE_ENV === 'production' ? '100' : '20'),
+    10
+  );
+
+  const concurrency = options?.concurrency || defaultConcurrency;
+  const maxJobsPerMinute = options?.maxJobsPerMinute || 300;
 
   if (!process.env.REDIS_URL) {
     logger.warn('REDIS_URL not set - workflow queue disabled, falling back to direct execution');
@@ -43,6 +56,11 @@ export async function initializeWorkflowQueue(options?: {
   }
 
   try {
+    logger.info(
+      { concurrency, maxJobsPerMinute },
+      'Initializing workflow queue with concurrency settings'
+    );
+
     // Create queue for workflow execution
     createQueue(WORKFLOW_QUEUE_NAME, {
       defaultJobOptions: {
