@@ -9,7 +9,7 @@ src/
   ├── app/              # Next.js App Router (pages, layouts, API routes)
   ├── components/       # React UI components (workflows, credentials, clients)
   ├── lib/              # Core utilities (workflow engine, auth, db, queue, scheduler)
-  ├── modules/          # 18 domain modules (AI, social, communication, business, etc.)
+  ├── modules/          # 16 domain modules, 140+ services (AI, social, communication, business, etc.)
   ├── types/            # TypeScript type definitions
   └── hooks/            # Custom React hooks
 scripts/                # Workflow & database management utilities
