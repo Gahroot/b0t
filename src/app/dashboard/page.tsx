@@ -137,10 +137,16 @@ export default function DashboardPage() {
           ? `/api/logs?limit=5&organizationId=${currentClient.id}`
           : '/api/logs?limit=5';
         const response = await fetch(url);
-        const data = await response.json();
-        setLogs(data.logs || []);
-      } catch (error) {
-        console.error('Failed to fetch logs:', error);
+        if (response.ok) {
+          const data = await response.json();
+          setLogs(data.logs || []);
+        } else {
+          // Silently handle auth errors (will show empty state)
+          setLogs([]);
+        }
+      } catch {
+        // Silently handle errors (will show empty state)
+        setLogs([]);
       }
     };
 
