@@ -388,3 +388,35 @@ export function fill<T>(length: number, value: T): T[] {
 export function repeat<T>(pattern: T[], times: number): T[] {
   return Array(times).fill(pattern).flat();
 }
+
+/**
+ * Transform array by applying a module to each item
+ * This is a workflow-specific function that executes a module for each array item
+ */
+export async function forEach<T>(_options: {
+  arr: T[];
+  module: string;
+  inputs: Record<string, unknown>;
+  itemVariable?: string;
+}): Promise<unknown[]> {
+  // This function is meant to be called by the workflow engine
+  // which will handle the actual module execution
+  // For now, we'll throw an error if called directly
+  throw new Error(
+    'forEach must be called through the workflow engine. ' +
+    'It cannot be used directly in code.'
+  );
+}
+
+/**
+ * Transform array by mapping each item through a module
+ * Alias for forEach with clearer semantic meaning
+ */
+export async function mapWithModule<T>(options: {
+  arr: T[];
+  module: string;
+  inputs: Record<string, unknown>;
+  itemVariable?: string;
+}): Promise<unknown[]> {
+  return forEach(options);
+}

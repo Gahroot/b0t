@@ -3553,6 +3553,51 @@ export function getModuleRegistry(): ModuleCategory[] {
       name: 'external-apis',
       modules: [
         {
+          name: 'hackernews',
+          functions: [
+            {
+              name: 'getTopStories',
+              description: "Get top stories from HackerNews",
+              signature: 'getTopStories(options)',
+            },
+            {
+              name: 'getNewStories',
+              description: "Get new stories from HackerNews",
+              signature: 'getNewStories(options)',
+            },
+            {
+              name: 'getBestStories',
+              description: "Get best stories from HackerNews",
+              signature: 'getBestStories(options)',
+            },
+            {
+              name: 'getAskStories',
+              description: "Get Ask HN stories",
+              signature: 'getAskStories(options)',
+            },
+            {
+              name: 'getShowStories',
+              description: "Get Show HN stories",
+              signature: 'getShowStories(options)',
+            },
+            {
+              name: 'getJobStories',
+              description: "Get job postings from HackerNews",
+              signature: 'getJobStories(options)',
+            },
+            {
+              name: 'getStoryDetails',
+              description: "Get story details by ID",
+              signature: 'getStoryDetails(options)',
+            },
+            {
+              name: 'getUserDetails',
+              description: "Get user details by username",
+              signature: 'getUserDetails(options)',
+            },
+          ],
+        },
+        {
           name: 'rapidapi-newsapi',
           functions: [
             {
@@ -4673,6 +4718,16 @@ export function getModuleRegistry(): ModuleCategory[] {
               description: "Create array from repeating pattern",
               signature: 'repeat(pattern, times)',
             },
+            {
+              name: 'forEach',
+              description: "Transform array by applying a module to each item",
+              signature: 'forEach(_options)',
+            },
+            {
+              name: 'mapWithModule',
+              description: "Transform array by mapping each item through a module",
+              signature: 'mapWithModule(options)',
+            },
           ],
         },
         {
@@ -5602,6 +5657,11 @@ export function getModuleRegistry(): ModuleCategory[] {
               name: 'reduceArray',
               description: "Reduce an array to a single value using custom JavaScript",
               signature: 'reduceArray(options)',
+            },
+            {
+              name: 'executeAsync',
+              description: "Execute async JavaScript code in a worker thread",
+              signature: 'executeAsync(options)',
             },
           ],
         },

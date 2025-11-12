@@ -146,4 +146,27 @@ registry.forEach((category) => {
 if (!found) {
   console.log('❌ No modules found matching your query');
   console.log('\nTip: Try a broader search term or use --list to see all modules');
+
+  // Suggest alternatives for common searches
+  const suggestions: Record<string, string[]> = {
+    'hackernews': ['Try: "http" for custom API calls', 'Available: external-apis.hackernews module'],
+    'hacker news': ['Try: "http" for custom API calls', 'Available: external-apis.hackernews module'],
+    'hn': ['Try: "http" for custom API calls', 'Available: external-apis.hackernews module'],
+    'reddit': ['Try: "http" for custom API calls'],
+    'github': ['Try: "http" for custom API calls'],
+    'async': ['Try: "javascript" for code execution', 'Available: utilities.javascript.executeAsync for async operations'],
+    'fetch': ['Try: "http" for HTTP requests', 'Available: utilities.javascript.executeAsync for custom fetch code'],
+    'foreach': ['Try: "array" for array operations', 'Available: utilities.array-utils.forEach and mapWithModule'],
+    'loop': ['Try: "array" for array operations', 'Available: utilities.javascript.execute for custom loops'],
+    'iterate': ['Try: "array" for array operations'],
+  };
+
+  const lowerQuery = query.toLowerCase();
+  for (const [key, hints] of Object.entries(suggestions)) {
+    if (lowerQuery.includes(key)) {
+      console.log('\n💡 Suggestions:');
+      hints.forEach(hint => console.log(`   ${hint}`));
+      break;
+    }
+  }
 }

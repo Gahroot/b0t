@@ -86,6 +86,11 @@ async function httpRequestInternal<T = unknown>(
       'HTTP request successful'
     );
 
+    logger.debug(
+      'HTTP response structure: { data: <response>, status: number, statusText: string, headers: object }. ' +
+      'Access the response data using .data property (e.g., {{variable.data}})'
+    );
+
     return {
       data: response.data,
       status: response.status,

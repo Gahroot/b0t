@@ -548,6 +548,104 @@ npx tsx scripts/search-modules.ts "drizzle"
 
 ---
 
+## 7. Multi-Step API Fetch with Async JavaScript
+
+**Pattern:** Fetch list of IDs → Fetch details for each → Transform → Display
+
+**What this shows:** Using `utilities.javascript.executeAsync` to fetch multiple API endpoints with async/await. This is the modern approach for workflows that need to make sequential API calls.
+
+**When to use:** When you need to fetch data from multiple endpoints based on initial results, or when you need async operations like fetch, setTimeout, or Promise handling.
+
+```json
+{
+  "version": "1.0",
+  "name": "HackerNews Top Stories (Async)",
+  "description": "Fetch top HackerNews stories using async JavaScript",
+  "trigger": {
+    "type": "manual",
+    "config": {}
+  },
+  "config": {
+    "steps": [
+      {
+        "id": "step1",
+        "module": "utilities.http.httpGet",
+        "inputs": {
+          "url": "https://hacker-news.firebaseio.com/v0/topstories.json"
+        },
+        "outputAs": "topStoryIds"
+      },
+      {
+        "id": "step2",
+        "module": "utilities.array-utils.first",
+        "inputs": {
+          "arr": "{{topStoryIds.data}}",
+          "count": 10
+        },
+        "outputAs": "top10Ids"
+      },
+      {
+        "id": "step3",
+        "module": "utilities.javascript.executeAsync",
+        "inputs": {
+          "options": {
+            "code": "const stories = []; for (const id of ids) { const response = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`); const item = await response.json(); if (item && !item.deleted) { stories.push({ title: item.title || 'No title', url: item.url || `https://news.ycombinator.com/item?id=${id}`, score: item.score || 0, comments: item.descendants || 0 }); } } return stories;",
+            "context": {
+              "ids": "{{top10Ids}}"
+            }
+          }
+        },
+        "outputAs": "stories"
+      }
+    ],
+    "returnValue": "{{stories}}",
+    "outputDisplay": {
+      "type": "table",
+      "columns": [
+        {"key": "title", "label": "Title", "type": "text"},
+        {"key": "url", "label": "URL", "type": "link"},
+        {"key": "score", "label": "Score", "type": "number"},
+        {"key": "comments", "label": "Comments", "type": "number"}
+      ]
+    }
+  },
+  "metadata": {
+    "requiresCredentials": []
+  }
+}
+```
+
+**Key differences from regular execute():**
+- Use `utilities.javascript.executeAsync` (NOT `utilities.javascript.execute`)
+- Can use `await`, `fetch()`, `Promise`, and other async operations
+- Supports longer timeout (default 30s vs 5s)
+- Code runs in isolated worker thread
+- Access context variables directly: `ids` not `{{ids}}`
+
+**Alternative: Using dedicated module**
+
+If a module exists (like `external-apis.hackernews.getTopStories`), prefer that over custom async code:
+
+```json
+{
+  "id": "fetch",
+  "module": "external-apis.hackernews.getTopStories",
+  "inputs": {
+    "options": {
+      "limit": 10,
+      "filterByDate": false
+    }
+  },
+  "outputAs": "stories"
+}
+```
+
+**When to use executeAsync vs dedicated modules:**
+- ✅ Use executeAsync: Custom API, unique logic, one-off workflows
+- ✅ Use dedicated module: Well-known API (HN, Reddit, Twitter), reusable logic
+
+---
+
 ## Key Principles
 
 - **Variable syntax:** Use `{{outputAs}}` not `{{stepId.outputAs}}`
