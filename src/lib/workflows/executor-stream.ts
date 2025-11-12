@@ -10,6 +10,10 @@ import { eq, sql } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { randomUUID } from 'crypto';
 import { executeStep, normalizeStep, type WorkflowStep } from './control-flow';
+import {
+  buildDependencyGraph,
+  groupIntoWaves,
+} from './parallel-executor';
 
 /**
  * Progress Event Types
@@ -125,90 +129,263 @@ export async function executeWorkflowWithProgress(
 
     let lastOutput: unknown = null;
 
-    // Execute steps sequentially with progress tracking
-    for (let i = 0; i < config.steps.length; i++) {
-      const step = config.steps[i];
-      const normalizedStep = normalizeStep(step) as WorkflowStep;
-      const stepStartTime = Date.now();
+    // Normalize all steps first
+    const normalizedSteps = config.steps.map((step) => normalizeStep(step) as WorkflowStep);
 
-      logger.info({ workflowId, runId, stepId: normalizedStep.id, stepIndex: i }, 'Executing step');
+    // Build dependency graph and group into parallel waves
+    const graph = buildDependencyGraph(normalizedSteps, context);
+    const waves = groupIntoWaves(normalizedSteps, graph);
 
-      // Emit step started event
-      const modulePath = 'module' in normalizedStep ? (normalizedStep.module as string) : 'unknown';
-      onProgress?.({
-        type: 'step_started',
-        stepId: normalizedStep.id,
-        stepIndex: i,
-        totalSteps: config.steps.length,
-        module: modulePath,
-      });
+    logger.info(
+      {
+        workflowId,
+        totalWaves: waves.length,
+        waves: waves.map((wave, idx) => ({
+          wave: idx + 1,
+          steps: wave.map((s) => s.id),
+          count: wave.length,
+        })),
+      },
+      'Grouped steps into execution waves for parallel execution'
+    );
 
-      try {
-        // Execute step (supports actions, conditions, loops)
-        lastOutput = await executeStep(
-          normalizedStep,
-          context,
-          executeModuleFunction,
-          resolveVariables
-        );
+    // Execute each wave sequentially, steps within wave in parallel
+    for (let waveIdx = 0; waveIdx < waves.length; waveIdx++) {
+      const wave = waves[waveIdx];
 
-        const stepDuration = Date.now() - stepStartTime;
+      if (wave.length === 1) {
+        // Single step - execute directly
+        const step = wave[0];
+        const stepIndex = normalizedSteps.indexOf(step);
+        const stepStartTime = Date.now();
 
-        // Emit step completed event
+        logger.info({ workflowId, runId, stepId: step.id, stepIndex }, 'Executing single step in wave');
+
+        // Emit step started event
+        const modulePath = 'module' in step ? (step.module as string) : 'unknown';
         onProgress?.({
-          type: 'step_completed',
-          stepId: normalizedStep.id,
-          stepIndex: i,
-          duration: stepDuration,
-          output: lastOutput,
-        });
-      } catch (error) {
-        logger.error({ error, workflowId, runId, stepId: normalizedStep.id }, 'Step execution failed');
-
-        // Emit step failed event
-        onProgress?.({
-          type: 'step_failed',
-          stepId: normalizedStep.id,
-          stepIndex: i,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          type: 'step_started',
+          stepId: step.id,
+          stepIndex,
+          totalSteps: config.steps.length,
+          module: modulePath,
         });
 
-        // Update workflow run with error
-        const completedAt = new Date();
-        await db
-          .update(workflowRunsTable)
-          .set({
-            status: 'error',
-            completedAt,
-            duration: completedAt.getTime() - startedAt.getTime(),
+        try {
+          lastOutput = await executeStep(
+            step,
+            context,
+            executeModuleFunction,
+            resolveVariables
+          );
+
+          const stepDuration = Date.now() - stepStartTime;
+
+          onProgress?.({
+            type: 'step_completed',
+            stepId: step.id,
+            stepIndex,
+            duration: stepDuration,
+            output: lastOutput,
+          });
+        } catch (error) {
+          logger.error({ error, workflowId, runId, stepId: step.id }, 'Step execution failed');
+
+          onProgress?.({
+            type: 'step_failed',
+            stepId: step.id,
+            stepIndex,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+
+          // Update workflow run with error
+          const completedAt = new Date();
+          await db
+            .update(workflowRunsTable)
+            .set({
+              status: 'error',
+              completedAt,
+              duration: completedAt.getTime() - startedAt.getTime(),
+              error: error instanceof Error ? error.message : 'Unknown error',
+              errorStep: step.id,
+            })
+            .where(eq(workflowRunsTable.id, runId));
+
+          await db
+            .update(workflowsTable)
+            .set({
+              lastRun: completedAt,
+              lastRunStatus: 'error',
+              lastRunError: error instanceof Error ? error.message : 'Unknown error',
+              runCount: sql`${workflowsTable.runCount} + 1`,
+            })
+            .where(eq(workflowsTable.id, workflowId));
+
+          onProgress?.({
+            type: 'workflow_failed',
+            runId,
             error: error instanceof Error ? error.message : 'Unknown error',
             errorStep: step.id,
-          })
-          .where(eq(workflowRunsTable.id, runId));
+          });
 
-        await db
-          .update(workflowsTable)
-          .set({
-            lastRun: completedAt,
-            lastRunStatus: 'error',
-            lastRunError: error instanceof Error ? error.message : 'Unknown error',
-            runCount: sql`${workflowsTable.runCount} + 1`,
-          })
-          .where(eq(workflowsTable.id, workflowId));
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            errorStep: step.id,
+          };
+        }
+      } else {
+        // Multiple steps - execute in parallel
+        logger.info(
+          {
+            waveNumber: waveIdx + 1,
+            stepCount: wave.length,
+            stepIds: wave.map((s) => s.id),
+          },
+          'Executing steps in parallel (wave execution)'
+        );
 
-        // Emit workflow failed event
-        onProgress?.({
-          type: 'workflow_failed',
-          runId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          errorStep: normalizedStep.id,
-        });
+        // Emit started events for all steps in parallel wave
+        for (const step of wave) {
+          const stepIndex = normalizedSteps.indexOf(step);
+          const modulePath = 'module' in step ? (step.module as string) : 'unknown';
+          onProgress?.({
+            type: 'step_started',
+            stepId: step.id,
+            stepIndex,
+            totalSteps: config.steps.length,
+            module: modulePath,
+          });
+        }
 
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          errorStep: normalizedStep.id,
-        };
+        const stepStartTimes = new Map<string, number>();
+        wave.forEach((step) => stepStartTimes.set(step.id, Date.now()));
+
+        try {
+          const outputs = await Promise.all(
+            wave.map(async (step) => {
+              try {
+                const output = await executeStep(
+                  step,
+                  context,
+                  executeModuleFunction,
+                  resolveVariables
+                );
+                return { success: true, stepId: step.id, output };
+              } catch (error) {
+                return {
+                  success: false,
+                  stepId: step.id,
+                  error: error instanceof Error ? error.message : 'Unknown error',
+                };
+              }
+            })
+          );
+
+          // Check for failures
+          const failed = outputs.find((o) => !o.success);
+          if (failed) {
+            const step = wave.find((s) => s.id === failed.stepId)!;
+            const stepIndex = normalizedSteps.indexOf(step);
+
+            logger.error({ workflowId, runId, stepId: failed.stepId }, 'Parallel step execution failed');
+
+            onProgress?.({
+              type: 'step_failed',
+              stepId: failed.stepId,
+              stepIndex,
+              error: failed.error || 'Unknown error',
+            });
+
+            // Update workflow run with error
+            const completedAt = new Date();
+            await db
+              .update(workflowRunsTable)
+              .set({
+                status: 'error',
+                completedAt,
+                duration: completedAt.getTime() - startedAt.getTime(),
+                error: failed.error || 'Unknown error',
+                errorStep: failed.stepId,
+              })
+              .where(eq(workflowRunsTable.id, runId));
+
+            await db
+              .update(workflowsTable)
+              .set({
+                lastRun: completedAt,
+                lastRunStatus: 'error',
+                lastRunError: failed.error || 'Unknown error',
+                runCount: sql`${workflowsTable.runCount} + 1`,
+              })
+              .where(eq(workflowsTable.id, workflowId));
+
+            onProgress?.({
+              type: 'workflow_failed',
+              runId,
+              error: failed.error || 'Unknown error',
+              errorStep: failed.stepId,
+            });
+
+            return {
+              success: false,
+              error: failed.error || 'Unknown error',
+              errorStep: failed.stepId,
+            };
+          }
+
+          // All succeeded - emit completed events
+          for (const result of outputs) {
+            const step = wave.find((s) => s.id === result.stepId)!;
+            const stepIndex = normalizedSteps.indexOf(step);
+            const stepStartTime = stepStartTimes.get(result.stepId) || Date.now();
+            const stepDuration = Date.now() - stepStartTime;
+
+            onProgress?.({
+              type: 'step_completed',
+              stepId: result.stepId,
+              stepIndex,
+              duration: stepDuration,
+              output: result.output,
+            });
+
+            lastOutput = result.output;
+          }
+        } catch (error) {
+          logger.error({ error, workflowId, runId }, 'Parallel wave execution failed');
+
+          const completedAt = new Date();
+          await db
+            .update(workflowRunsTable)
+            .set({
+              status: 'error',
+              completedAt,
+              duration: completedAt.getTime() - startedAt.getTime(),
+              error: error instanceof Error ? error.message : 'Unknown error',
+            })
+            .where(eq(workflowRunsTable.id, runId));
+
+          await db
+            .update(workflowsTable)
+            .set({
+              lastRun: completedAt,
+              lastRunStatus: 'error',
+              lastRunError: error instanceof Error ? error.message : 'Unknown error',
+              runCount: sql`${workflowsTable.runCount} + 1`,
+            })
+            .where(eq(workflowsTable.id, workflowId));
+
+          onProgress?.({
+            type: 'workflow_failed',
+            runId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          };
+        }
       }
     }
 

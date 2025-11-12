@@ -115,12 +115,19 @@ const getDefaultQueueOptions = (): QueueOptions => ({
 // Default worker options
 const defaultWorkerOptions: Omit<WorkerOptions, 'connection'> = {
   autorun: false,              // Start workers manually
-  concurrency: 1,              // Process one job at a time (safe for social media APIs)
+  concurrency: 50,             // Process 50 jobs concurrently (optimized for I/O-bound workflows)
   limiter: {
-    max: 10,                   // Max 10 jobs
+    max: 600,                  // Max 600 jobs per minute (10/sec rate limit)
     duration: 60000,           // Per minute (rate limiting)
   },
 };
+
+// Log queue configuration on startup
+logger.info({
+  concurrency: 50,
+  maxJobsPerMinute: 600,
+  optimization: 'WORKER_CONCURRENCY'
+}, '✅ BullMQ default worker config: 50 concurrent jobs, 600/min rate limit');
 
 /**
  * Queue Registry

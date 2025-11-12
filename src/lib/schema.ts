@@ -166,6 +166,7 @@ export const workflowsTable = pgTable('workflows', {
     config: Record<string, unknown>;
   }>(),
   status: varchar('status', { length: 50 }).notNull().default('draft'),
+  organizationStatus: varchar('organization_status', { length: 50 }),  // Denormalized for performance (avoids JOIN)
   createdAt: timestamp('created_at').notNull().defaultNow(),
   lastRun: timestamp('last_run'),
   lastRunStatus: varchar('last_run_status', { length: 50 }),

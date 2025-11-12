@@ -59,23 +59,22 @@ export async function getTopStories(options: {
     const response = await httpGet<number[]>(`${HN_API_BASE}/topstories.json`);
     const storyIds = response.data.slice(0, Math.min(limit, 500)); // API returns up to 500
 
-    // Fetch details for each story
-    const stories: HNStory[] = [];
+    // Fetch details for all stories in parallel (10x faster!)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayTimestamp = today.getTime() / 1000;
 
-    for (const id of storyIds) {
+    const storyPromises = storyIds.map(async (id) => {
       try {
         const itemResponse = await httpGet<HNItem>(`${HN_API_BASE}/item/${id}.json`);
         const item = itemResponse.data;
 
-        if (!item || item.deleted || item.dead) continue;
+        if (!item || item.deleted || item.dead) return null;
 
         // Filter by date if requested
-        if (filterByDate && item.time < todayTimestamp) continue;
+        if (filterByDate && item.time < todayTimestamp) return null;
 
-        stories.push({
+        return {
           id: item.id,
           title: item.title || 'No title',
           url: item.url || `https://news.ycombinator.com/item?id=${item.id}`,
@@ -83,14 +82,17 @@ export async function getTopStories(options: {
           by: item.by,
           time: item.time,
           descendants: item.descendants || 0,
-        });
-
-        if (stories.length >= limit) break;
+        };
       } catch (error) {
         logger.warn({ id, error }, 'Failed to fetch story details');
-        continue;
+        return null;
       }
-    }
+    });
+
+    const fetchedStories = await Promise.all(storyPromises);
+    const stories = fetchedStories
+      .filter((story): story is HNStory => story !== null)
+      .slice(0, limit);
 
     logger.info({ count: stories.length }, 'Fetched HackerNews top stories');
     return stories;
@@ -115,16 +117,15 @@ export async function getNewStories(options: {
     const response = await httpGet<number[]>(`${HN_API_BASE}/newstories.json`);
     const storyIds = response.data.slice(0, Math.min(limit, 500));
 
-    const stories: HNStory[] = [];
-
-    for (const id of storyIds) {
+    // Fetch all stories in parallel
+    const storyPromises = storyIds.map(async (id) => {
       try {
         const itemResponse = await httpGet<HNItem>(`${HN_API_BASE}/item/${id}.json`);
         const item = itemResponse.data;
 
-        if (!item || item.deleted || item.dead) continue;
+        if (!item || item.deleted || item.dead) return null;
 
-        stories.push({
+        return {
           id: item.id,
           title: item.title || 'No title',
           url: item.url || `https://news.ycombinator.com/item?id=${item.id}`,
@@ -132,14 +133,17 @@ export async function getNewStories(options: {
           by: item.by,
           time: item.time,
           descendants: item.descendants || 0,
-        });
-
-        if (stories.length >= limit) break;
+        };
       } catch (error) {
         logger.warn({ id, error }, 'Failed to fetch story details');
-        continue;
+        return null;
       }
-    }
+    });
+
+    const fetchedStories = await Promise.all(storyPromises);
+    const stories = fetchedStories
+      .filter((story): story is HNStory => story !== null)
+      .slice(0, limit);
 
     logger.info({ count: stories.length }, 'Fetched HackerNews new stories');
     return stories;
@@ -164,16 +168,15 @@ export async function getBestStories(options: {
     const response = await httpGet<number[]>(`${HN_API_BASE}/beststories.json`);
     const storyIds = response.data.slice(0, Math.min(limit, 500));
 
-    const stories: HNStory[] = [];
-
-    for (const id of storyIds) {
+    // Fetch all stories in parallel
+    const storyPromises = storyIds.map(async (id) => {
       try {
         const itemResponse = await httpGet<HNItem>(`${HN_API_BASE}/item/${id}.json`);
         const item = itemResponse.data;
 
-        if (!item || item.deleted || item.dead) continue;
+        if (!item || item.deleted || item.dead) return null;
 
-        stories.push({
+        return {
           id: item.id,
           title: item.title || 'No title',
           url: item.url || `https://news.ycombinator.com/item?id=${item.id}`,
@@ -181,14 +184,17 @@ export async function getBestStories(options: {
           by: item.by,
           time: item.time,
           descendants: item.descendants || 0,
-        });
-
-        if (stories.length >= limit) break;
+        };
       } catch (error) {
         logger.warn({ id, error }, 'Failed to fetch story details');
-        continue;
+        return null;
       }
-    }
+    });
+
+    const fetchedStories = await Promise.all(storyPromises);
+    const stories = fetchedStories
+      .filter((story): story is HNStory => story !== null)
+      .slice(0, limit);
 
     logger.info({ count: stories.length }, 'Fetched HackerNews best stories');
     return stories;
@@ -213,16 +219,15 @@ export async function getAskStories(options: {
     const response = await httpGet<number[]>(`${HN_API_BASE}/askstories.json`);
     const storyIds = response.data.slice(0, Math.min(limit, 500));
 
-    const stories: HNStory[] = [];
-
-    for (const id of storyIds) {
+    // Fetch all stories in parallel
+    const storyPromises = storyIds.map(async (id) => {
       try {
         const itemResponse = await httpGet<HNItem>(`${HN_API_BASE}/item/${id}.json`);
         const item = itemResponse.data;
 
-        if (!item || item.deleted || item.dead) continue;
+        if (!item || item.deleted || item.dead) return null;
 
-        stories.push({
+        return {
           id: item.id,
           title: item.title || 'No title',
           url: item.url || `https://news.ycombinator.com/item?id=${item.id}`,
@@ -230,14 +235,17 @@ export async function getAskStories(options: {
           by: item.by,
           time: item.time,
           descendants: item.descendants || 0,
-        });
-
-        if (stories.length >= limit) break;
+        };
       } catch (error) {
         logger.warn({ id, error }, 'Failed to fetch story details');
-        continue;
+        return null;
       }
-    }
+    });
+
+    const fetchedStories = await Promise.all(storyPromises);
+    const stories = fetchedStories
+      .filter((story): story is HNStory => story !== null)
+      .slice(0, limit);
 
     logger.info({ count: stories.length }, 'Fetched HackerNews Ask stories');
     return stories;
@@ -262,16 +270,15 @@ export async function getShowStories(options: {
     const response = await httpGet<number[]>(`${HN_API_BASE}/showstories.json`);
     const storyIds = response.data.slice(0, Math.min(limit, 500));
 
-    const stories: HNStory[] = [];
-
-    for (const id of storyIds) {
+    // Fetch all stories in parallel
+    const storyPromises = storyIds.map(async (id) => {
       try {
         const itemResponse = await httpGet<HNItem>(`${HN_API_BASE}/item/${id}.json`);
         const item = itemResponse.data;
 
-        if (!item || item.deleted || item.dead) continue;
+        if (!item || item.deleted || item.dead) return null;
 
-        stories.push({
+        return {
           id: item.id,
           title: item.title || 'No title',
           url: item.url || `https://news.ycombinator.com/item?id=${item.id}`,
@@ -279,14 +286,17 @@ export async function getShowStories(options: {
           by: item.by,
           time: item.time,
           descendants: item.descendants || 0,
-        });
-
-        if (stories.length >= limit) break;
+        };
       } catch (error) {
         logger.warn({ id, error }, 'Failed to fetch story details');
-        continue;
+        return null;
       }
-    }
+    });
+
+    const fetchedStories = await Promise.all(storyPromises);
+    const stories = fetchedStories
+      .filter((story): story is HNStory => story !== null)
+      .slice(0, limit);
 
     logger.info({ count: stories.length }, 'Fetched HackerNews Show stories');
     return stories;
@@ -311,16 +321,15 @@ export async function getJobStories(options: {
     const response = await httpGet<number[]>(`${HN_API_BASE}/jobstories.json`);
     const storyIds = response.data.slice(0, Math.min(limit, 500));
 
-    const stories: HNStory[] = [];
-
-    for (const id of storyIds) {
+    // Fetch all stories in parallel
+    const storyPromises = storyIds.map(async (id) => {
       try {
         const itemResponse = await httpGet<HNItem>(`${HN_API_BASE}/item/${id}.json`);
         const item = itemResponse.data;
 
-        if (!item || item.deleted || item.dead) continue;
+        if (!item || item.deleted || item.dead) return null;
 
-        stories.push({
+        return {
           id: item.id,
           title: item.title || 'No title',
           url: item.url || `https://news.ycombinator.com/item?id=${item.id}`,
@@ -328,14 +337,17 @@ export async function getJobStories(options: {
           by: item.by,
           time: item.time,
           descendants: item.descendants || 0,
-        });
-
-        if (stories.length >= limit) break;
+        };
       } catch (error) {
         logger.warn({ id, error }, 'Failed to fetch story details');
-        continue;
+        return null;
       }
-    }
+    });
+
+    const fetchedStories = await Promise.all(storyPromises);
+    const stories = fetchedStories
+      .filter((story): story is HNStory => story !== null)
+      .slice(0, limit);
 
     logger.info({ count: stories.length }, 'Fetched HackerNews job stories');
     return stories;

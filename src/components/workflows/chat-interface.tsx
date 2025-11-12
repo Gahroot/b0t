@@ -125,9 +125,9 @@ export function ChatInterface({
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         <AnimatePresence initial={false}>
-          {messages.map((message) => (
+          {messages.map((message, index) => (
             <motion.div
-              key={message.id}
+              key={`${message.id}-${index}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}

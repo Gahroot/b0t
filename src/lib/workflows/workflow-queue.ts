@@ -56,15 +56,24 @@ export async function initializeWorkflowQueue(options?: {
   }
 
   try {
-    // Simple console log for dev, structured log for production
+    // Log concurrency settings with optimization status
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🔄 Workflow queue ready (concurrency: ${concurrency})`);
+      console.log(`🔄 Workflow queue ready (concurrency: ${concurrency}, rate: ${maxJobsPerMinute}/min)`);
     } else {
       logger.info(
         { concurrency, maxJobsPerMinute },
         'Initializing workflow queue with concurrency settings'
       );
     }
+
+    // Always log optimization status
+    logger.info({
+      concurrency,
+      maxJobsPerMinute,
+      environment: process.env.NODE_ENV || 'development',
+      optimization: 'WORKFLOW_QUEUE_CONCURRENCY',
+      overridden: !!options?.concurrency
+    }, `✅ Workflow queue concurrency: ${concurrency} parallel workflows`);
 
     // Create queue for workflow execution
     createQueue(WORKFLOW_QUEUE_NAME, {

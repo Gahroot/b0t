@@ -152,9 +152,9 @@ export async function preloadCredentialCache(maxUsers: number = 100): Promise<Ca
 export async function invalidateUserCredentialCache(userId: string): Promise<void> {
   logger.info({ userId }, 'Invalidating credential cache for user');
 
-  // Note: The executor.ts loadUserCredentials function manages its own cache
-  // This is a placeholder for when we implement a proper caching layer
-  // For now, the executor will re-load credentials on next execution
+  // Invalidate Redis cache (shared across instances)
+  const { deleteCache, CacheKeys } = await import('@/lib/cache');
+  await deleteCache(CacheKeys.userCredentials(userId));
 
-  // TODO: Implement proper cache invalidation when we add Redis-based cache
+  logger.info({ userId }, 'Credential cache invalidated (Redis)');
 }

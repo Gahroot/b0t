@@ -99,7 +99,8 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
     }
   };
 
-  const handleRunClick = () => {
+  const handleRunClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.blur();
     setExecutionDialogOpen(true);
   };
 
@@ -246,7 +247,7 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => setEditDialogOpen(true)}
+              onClick={(e) => { e.currentTarget.blur(); setEditDialogOpen(true); }}
               title="Edit workflow"
             >
               <Pencil className="h-4 w-4" />
@@ -254,7 +255,7 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => onExport(workflow.id)}
+              onClick={(e) => { e.currentTarget.blur(); onExport(workflow.id); }}
               title="Export workflow"
             >
               <Download className="h-4 w-4" />
@@ -307,7 +308,7 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSettingsDialogOpen(true)}
+            onClick={(e) => { e.currentTarget.blur(); setSettingsDialogOpen(true); }}
             className="h-7 px-2 transition-all duration-200 hover:scale-105 active:scale-95 group"
             title="Configure workflow settings"
           >
@@ -317,7 +318,7 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setCredentialsConfigOpen(true)}
+            onClick={(e) => { e.currentTarget.blur(); setCredentialsConfigOpen(true); }}
             className="h-7 px-2 transition-all duration-200 hover:scale-105 active:scale-95 group"
             title="Configure credentials"
           >
@@ -327,7 +328,7 @@ export function WorkflowCard({ workflow, onDeleted, onExport, onUpdated }: Workf
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setOutputsDialogOpen(true)}
+            onClick={(e) => { e.currentTarget.blur(); setOutputsDialogOpen(true); }}
             className="h-7 px-2 transition-all duration-200 hover:scale-105 active:scale-95 group"
             title="View workflow execution history"
           >
